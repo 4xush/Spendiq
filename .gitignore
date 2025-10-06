@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# OS-specific files
+.DS_Store
+
+# IDE/editor files
+.vscode/
+.idea/
+
+# Build output
+dist/
+build/
+
+# Coverage and testing
+lib-cov/
+coverage/
+
+# Optional: ignore local GitHub or config files
+# .github/
