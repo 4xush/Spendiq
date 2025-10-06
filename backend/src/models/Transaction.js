@@ -49,7 +49,16 @@ const transactionSchema = new mongoose.Schema({
         confidence: Number, // AI confidence score for auto-categorized transactions
         originalText: String, // Original OCR text for receipts
         merchant: String,
-        location: String
+        location: String,
+        items: [{
+            name: String,
+            quantity: Number,
+            price: Number
+        }],
+        receiptId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Receipt'
+        }
     }
 }, {
     timestamps: true

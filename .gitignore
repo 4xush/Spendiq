@@ -39,3 +39,7 @@ coverage/
 uploads/
 
 shared/
+
+*.traineddata
+
+docs/

@@ -115,7 +115,9 @@ async function processReceiptAsync(receiptId, filePath, userId) {
                     metadata: {
                         confidence: extractedData.confidence,
                         originalText: cleanText,
-                        merchant: extractedData.merchant
+                        merchant: extractedData.merchant,
+                        items: extractedData.items || [],
+                        receiptId: receiptId
                     }
                 })
 
