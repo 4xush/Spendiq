@@ -2,9 +2,18 @@ import Receipt from '../models/Receipt.js'
 import Transaction from '../models/Transaction.js'
 import ocrService from '../services/ocrService.js'
 import pdfService from '../services/pdfService.js'
-import geminiService from '../services/geminiService.js'
+import GeminiService from '../services/geminiService.js'
 import fs from 'fs'
 import path from 'path'
+
+// Create a lazy-loaded instance of GeminiService
+let geminiServiceInstance = null
+const getGeminiService = () => {
+    if (!geminiServiceInstance) {
+        geminiServiceInstance = new GeminiService()
+    }
+    return geminiServiceInstance
+}
 
 // Process receipt upload
 export const processReceipt = async (req, res) => {
@@ -65,7 +74,7 @@ async function processReceiptAsync(receiptId, filePath, userId) {
         const cleanText = ocrService.cleanOCRText(rawText)
 
         // Analyze with Gemini AI
-        const extractedData = await geminiService.analyzeReceipt(cleanText)
+        const extractedData = await getGeminiService().analyzeReceipt(cleanText)
 
         // Update receipt with extracted data
         const receipt = await Receipt.findByIdAndUpdate(
@@ -141,7 +150,7 @@ export const processPDF = async (req, res) => {
         const pdfData = await pdfService.extractTextFromPDF(file.path)
 
         // Parse transactions using AI
-        const extractedTransactions = await geminiService.analyzeBankStatement(pdfData.text)
+        const extractedTransactions = await getGeminiService().analyzeBankStatement(pdfData.text)
 
         // Create transactions
         const createdTransactions = []

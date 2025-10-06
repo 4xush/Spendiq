@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Upload as UploadIcon,
   FileText,
@@ -6,8 +6,11 @@ import {
   CheckCircle,
   AlertCircle,
   Clock,
+  Eye,
+  ArrowRight,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import LoadingSpinner from "../components/LoadingSpinner";
 
@@ -15,6 +18,54 @@ function Upload() {
   const [activeTab, setActiveTab] = useState("receipt");
   const [uploading, setUploading] = useState(false);
   const [uploadResults, setUploadResults] = useState([]);
+  const navigate = useNavigate();
+
+  // Poll for receipt status updates
+  useEffect(() => {
+    const processingItems = uploadResults.filter(
+      (item) => item.status === "processing" && item.receiptId
+    );
+
+    if (processingItems.length === 0) return;
+
+    const pollInterval = setInterval(async () => {
+      for (const item of processingItems) {
+        try {
+          const response = await api.get(`/files/receipt/${item.receiptId}`);
+          const { receipt } = response.data;
+
+          if (receipt.status !== "processing") {
+            setUploadResults((prev) =>
+              prev.map((result) =>
+                result.receiptId === item.receiptId
+                  ? {
+                      ...result,
+                      status: receipt.status,
+                      extractedData: receipt.extractedData,
+                      transaction: receipt.transaction,
+                      error: receipt.error,
+                    }
+                  : result
+              )
+            );
+
+            // Show notification
+            if (receipt.status === "completed") {
+              toast.success(
+                `Receipt "${item.filename}" processed successfully!`
+              );
+            } else if (receipt.status === "failed") {
+              toast.error(`Failed to process "${item.filename}"`);
+            }
+          }
+        } catch (error) {
+          console.error("Error polling receipt status:", error);
+        }
+      }
+    }, 2000); // Poll every 2 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [uploadResults]);
 
   const handleFileUpload = async (file, type) => {
     if (!file) return;
@@ -40,6 +91,7 @@ function Upload() {
         ...prev,
         {
           id: response.data.receiptId || Date.now(),
+          receiptId: response.data.receiptId, // Store the actual receipt ID for polling
           filename: file.name,
           type,
           status: "processing",
@@ -242,29 +294,143 @@ function Upload() {
                 {uploadResults.map((result) => (
                   <div
                     key={result.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    className="p-4 bg-gray-50 rounded-lg border border-gray-200"
                   >
-                    <div className="flex items-center">
-                      {result.type === "receipt" ? (
-                        <Image className="h-8 w-8 text-gray-400 mr-3" />
-                      ) : (
-                        <FileText className="h-8 w-8 text-gray-400 mr-3" />
-                      )}
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {result.filename}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {result.timestamp.toLocaleTimeString()}
-                        </p>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center">
+                        {result.type === "receipt" ? (
+                          <Image className="h-8 w-8 text-gray-400 mr-3" />
+                        ) : (
+                          <FileText className="h-8 w-8 text-gray-400 mr-3" />
+                        )}
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {result.filename}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {result.timestamp.toLocaleTimeString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center">
+                        {getStatusIcon(result.status)}
+                        <span className="ml-2 text-sm font-medium text-gray-700">
+                          {getStatusText(result.status)}
+                        </span>
                       </div>
                     </div>
-                    <div className="flex items-center">
-                      {getStatusIcon(result.status)}
-                      <span className="ml-2 text-sm font-medium text-gray-700">
-                        {getStatusText(result.status)}
-                      </span>
-                    </div>
+
+                    {/* Show extracted data for completed receipts */}
+                    {result.status === "completed" && result.extractedData && (
+                      <div className="mt-4 p-3 bg-white rounded-lg border border-green-200">
+                        <h4 className="font-medium text-green-800 mb-2">
+                          📄 Extracted Data:
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <span className="font-medium text-gray-700">
+                              Merchant:
+                            </span>
+                            <span className="ml-2 text-gray-600">
+                              {result.extractedData.merchant || "N/A"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-700">
+                              Amount:
+                            </span>
+                            <span className="ml-2 text-gray-600">
+                              ${result.extractedData.amount || "N/A"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-700">
+                              Date:
+                            </span>
+                            <span className="ml-2 text-gray-600">
+                              {result.extractedData.date || "N/A"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-700">
+                              Category:
+                            </span>
+                            <span className="ml-2 text-gray-600">
+                              {result.extractedData.category || "N/A"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {result.extractedData.items &&
+                          result.extractedData.items.length > 0 && (
+                            <div className="mt-3">
+                              <span className="font-medium text-gray-700">
+                                Items:
+                              </span>
+                              <div className="ml-2 text-sm text-gray-600">
+                                {result.extractedData.items
+                                  .slice(0, 3)
+                                  .map((item, idx) => (
+                                    <div key={idx}>
+                                      • {item.name} (${item.price})
+                                    </div>
+                                  ))}
+                                {result.extractedData.items.length > 3 && (
+                                  <div>
+                                    ... and{" "}
+                                    {result.extractedData.items.length - 3} more
+                                    items
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                        <div className="mt-3 flex space-x-2">
+                          {result.transaction ? (
+                            <button
+                              onClick={() => navigate("/transactions")}
+                              className="flex items-center px-3 py-1 bg-green-100 text-green-700 rounded-md text-sm font-medium hover:bg-green-200 transition-colors"
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              View Transaction
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() =>
+                                navigate("/transactions", {
+                                  state: {
+                                    newTransaction: {
+                                      description:
+                                        result.extractedData.merchant,
+                                      amount: result.extractedData.amount,
+                                      date: result.extractedData.date,
+                                      category: result.extractedData.category,
+                                      type: "expense",
+                                    },
+                                  },
+                                })
+                              }
+                              className="flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded-md text-sm font-medium hover:bg-blue-200 transition-colors"
+                            >
+                              <ArrowRight className="h-4 w-4 mr-1" />
+                              Create Transaction
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Show error for failed receipts */}
+                    {result.status === "failed" && (
+                      <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-200">
+                        <p className="text-red-800 text-sm">
+                          ❌{" "}
+                          {result.error ||
+                            "Processing failed. Please try uploading again."}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

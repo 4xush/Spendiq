@@ -12,7 +12,7 @@ function Profile() {
     name: "",
     email: "",
     preferences: {
-      currency: "USD",
+      currency: "INR",
       timezone: "UTC",
     },
   });
@@ -23,7 +23,7 @@ function Profile() {
         name: user.name || "",
         email: user.email || "",
         preferences: {
-          currency: user.preferences?.currency || "USD",
+          currency: user.preferences?.currency || "INR",
           timezone: user.preferences?.timezone || "UTC",
         },
       });
@@ -166,13 +166,13 @@ function Profile() {
                   value={formData.preferences.currency}
                   onChange={handleChange}
                 >
+                  <option value="INR">Indian Rupee (INR)</option>
                   <option value="USD">US Dollar (USD)</option>
                   <option value="EUR">Euro (EUR)</option>
                   <option value="GBP">British Pound (GBP)</option>
                   <option value="CAD">Canadian Dollar (CAD)</option>
                   <option value="AUD">Australian Dollar (AUD)</option>
                   <option value="JPY">Japanese Yen (JPY)</option>
-                  <option value="INR">Indian Rupee (INR)</option>
                 </select>
               </div>
 

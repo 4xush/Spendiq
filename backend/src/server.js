@@ -17,7 +17,6 @@ import errorHandler from './middleware/errorHandler.js'
 
 // Load environment variables
 dotenv.config()
-
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)

@@ -2,13 +2,21 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 
 class GeminiService {
     constructor() {
+        if (!process.env.GEMINI_API_KEY) {
+            throw new Error('GEMINI_API_KEY environment variable is not set')
+        }
+        console.log('🔧 Initializing Gemini service with API key:', process.env.GEMINI_API_KEY ? 'Key found ✅' : 'No key ❌')
         this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-        this.model = this.genAI.getGenerativeModel({ model: 'gemini-pro' })
+        // Use the latest stable Gemini model
+        this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
     }
 
     // Analyze receipt text and extract transaction data
     async analyzeReceipt(ocrText) {
         try {
+            // console.log('🔍 Analyzing receipt with Gemini API...')
+            // console.log('📝 OCR Text length:', ocrText?.length || 0)
+
             const prompt = `
         Analyze the following receipt text and extract transaction information.
         Return a JSON object with the following structure:
@@ -40,11 +48,22 @@ class GeminiService {
             const response = await result.response
             const text = response.text()
 
+            // console.log('✅ Gemini API response received')
+            console.log('📄 Raw response:', text)
+
             try {
-                const extractedData = JSON.parse(text)
+                // Clean up the response to extract JSON
+                let cleanText = text.trim()
+
+                // Remove markdown code blocks if present
+                cleanText = cleanText.replace(/```json\s*/g, '').replace(/```\s*$/g, '')
+
+                const extractedData = JSON.parse(cleanText)
+                // console.log('📊 Parsed transaction data:', JSON.stringify(extractedData, null, 2))
                 return extractedData
             } catch (parseError) {
-                console.error('Failed to parse Gemini response:', parseError)
+                console.error('❌ Failed to parse Gemini response:', parseError)
+                console.error('📄 Raw response that failed to parse:', text)
                 return {
                     amount: null,
                     merchant: null,
@@ -55,7 +74,8 @@ class GeminiService {
                 }
             }
         } catch (error) {
-            console.error('Gemini API error:', error)
+            console.error('❌ Gemini API error:', error.message)
+            console.error('🔍 Full error details:', error)
             throw new Error('Failed to analyze receipt with AI')
         }
     }
@@ -164,4 +184,5 @@ class GeminiService {
     }
 }
 
-export default new GeminiService()
+// Export the class instead of an instance to avoid early instantiation
+export default GeminiService

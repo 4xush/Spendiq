@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { DollarSign, Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
@@ -12,13 +12,16 @@ function Login() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   const { user, login, error, clearError } = useAuth();
 
   // Redirect if already logged in
-  if (user) {
-    return <Navigate to="/" replace />;
-  }
+  useEffect(() => {
+    if (user) {
+      navigate("/", { replace: true });
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     if (error) {

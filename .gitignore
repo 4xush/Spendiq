@@ -34,3 +34,8 @@ coverage/
 
 # Optional: ignore local GitHub or config files
 # .github/
+
+
+uploads/
+
+shared/

@@ -58,7 +58,7 @@ function authReducer(state, action) {
         user: null,
         token: null,
         loading: false,
-        error: action.payload,
+        error: action.payload, // This will be null for "no token" case, or actual error message for real failures
       };
     case "CLEAR_ERROR":
       return {
@@ -73,13 +73,30 @@ function authReducer(state, action) {
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
+  const loadUser = async () => {
+    try {
+      const response = await api.get("/auth/profile");
+      dispatch({ type: "LOAD_USER_SUCCESS", payload: response.data.user });
+    } catch (error) {
+      dispatch({
+        type: "LOAD_USER_FAILURE",
+        payload: error.response?.data?.error || "Failed to load user",
+      });
+    }
+  };
+
   // Load user on app start if token exists
   useEffect(() => {
-    if (state.token) {
-      loadUser();
-    } else {
-      dispatch({ type: "LOAD_USER_FAILURE", payload: "No token found" });
-    }
+    const initializeAuth = async () => {
+      if (state.token) {
+        await loadUser();
+      } else {
+        // Don't dispatch error for missing token - just set loading to false
+        dispatch({ type: "LOAD_USER_FAILURE", payload: null });
+      }
+    };
+
+    initializeAuth();
   }, []);
 
   // Set token in localStorage and API headers
@@ -92,18 +109,6 @@ export function AuthProvider({ children }) {
       delete api.defaults.headers.common["Authorization"];
     }
   }, [state.token]);
-
-  const loadUser = async () => {
-    try {
-      const response = await api.get("/auth/profile");
-      dispatch({ type: "LOAD_USER_SUCCESS", payload: response.data.user });
-    } catch (error) {
-      dispatch({
-        type: "LOAD_USER_FAILURE",
-        payload: error.response?.data?.error || "Failed to load user",
-      });
-    }
-  };
 
   const login = async (email, password) => {
     dispatch({ type: "LOGIN_START" });

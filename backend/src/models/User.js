@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema({
     preferences: {
         currency: {
             type: String,
-            default: 'USD'
+            default: 'INR'
         },
         timezone: {
             type: String,
