@@ -147,6 +147,80 @@ function Transactions() {
             />
           </div>
         </div>
+
+        {/* Quick Date Filters */}
+        <div className="flex flex-wrap gap-2 mt-4">
+          <button
+            onClick={() => {
+              const today = new Date();
+              const lastMonth = new Date(
+                today.getFullYear(),
+                today.getMonth() - 1,
+                today.getDate()
+              );
+              setFilters((prev) => ({
+                ...prev,
+                startDate: lastMonth.toISOString().split("T")[0],
+                endDate: today.toISOString().split("T")[0],
+                page: 1,
+              }));
+            }}
+            className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+          >
+            Last 30 Days
+          </button>
+          <button
+            onClick={() => {
+              const today = new Date();
+              const firstDay = new Date(
+                today.getFullYear(),
+                today.getMonth(),
+                1
+              );
+              setFilters((prev) => ({
+                ...prev,
+                startDate: firstDay.toISOString().split("T")[0],
+                endDate: today.toISOString().split("T")[0],
+                page: 1,
+              }));
+            }}
+            className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
+          >
+            This Month
+          </button>
+          <button
+            onClick={() => {
+              const today = new Date();
+              const lastYear = new Date(
+                today.getFullYear() - 1,
+                today.getMonth(),
+                today.getDate()
+              );
+              setFilters((prev) => ({
+                ...prev,
+                startDate: lastYear.toISOString().split("T")[0],
+                endDate: today.toISOString().split("T")[0],
+                page: 1,
+              }));
+            }}
+            className="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors"
+          >
+            Last Year
+          </button>
+          <button
+            onClick={() => {
+              setFilters((prev) => ({
+                ...prev,
+                startDate: "",
+                endDate: "",
+                page: 1,
+              }));
+            }}
+            className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+          >
+            All Time
+          </button>
+        </div>
       </div>
 
       {/* Transactions List */}
@@ -323,13 +397,76 @@ function Transactions() {
         ) : (
           <div className="text-center py-12">
             <Calendar className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-            <p className="text-gray-500 mb-4">No transactions found</p>
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="btn-primary"
-            >
-              Add your first transaction
-            </button>
+            {filters.startDate ||
+            filters.endDate ||
+            filters.type ||
+            filters.category ||
+            filters.search ? (
+              <>
+                <p className="text-gray-500 mb-4">
+                  No transactions found for the current filters
+                </p>
+                <div className="space-y-2 mb-4">
+                  {filters.startDate && (
+                    <p className="text-sm text-gray-400">
+                      Start Date: {filters.startDate}
+                    </p>
+                  )}
+                  {filters.endDate && (
+                    <p className="text-sm text-gray-400">
+                      End Date: {filters.endDate}
+                    </p>
+                  )}
+                  {filters.type && (
+                    <p className="text-sm text-gray-400">
+                      Type: {filters.type}
+                    </p>
+                  )}
+                  {filters.category && (
+                    <p className="text-sm text-gray-400">
+                      Category: {filters.category}
+                    </p>
+                  )}
+                  {filters.search && (
+                    <p className="text-sm text-gray-400">
+                      Search: "{filters.search}"
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() =>
+                    setFilters({
+                      page: 1,
+                      limit: 20,
+                      type: "",
+                      category: "",
+                      search: "",
+                      startDate: "",
+                      endDate: "",
+                    })
+                  }
+                  className="btn-secondary mr-3"
+                >
+                  Clear Filters
+                </button>
+                <button
+                  onClick={() => setShowAddForm(true)}
+                  className="btn-primary"
+                >
+                  Add Transaction
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-gray-500 mb-4">No transactions found</p>
+                <button
+                  onClick={() => setShowAddForm(true)}
+                  className="btn-primary"
+                >
+                  Add your first transaction
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>

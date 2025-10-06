@@ -3,31 +3,205 @@ import fs from 'fs'
 import path from 'path'
 
 class OCRService {
-    // Extract text from image using Tesseract
-    async extractTextFromImage(imagePath) {
+    constructor() {
+        this.worker = null
+    }
+
+    // Initialize a worker with error handling
+    async initializeWorker() {
+        if (this.worker) {
+            return this.worker
+        }
+
         try {
-            console.log('Starting OCR processing for:', imagePath)
+            this.worker = await Tesseract.createWorker('eng')
 
-            const { data: { text } } = await Tesseract.recognize(
-                imagePath,
-                'eng',
-                {
-                    logger: m => {
-                        if (m.status === 'recognizing text') {
-                            console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`)
-                        }
-                    }
+            // Add error listeners to the worker
+            if (this.worker.worker) {
+                this.worker.worker.onerror = (error) => {
+                    console.error('🚨 Tesseract Worker Error:', error)
                 }
-            )
 
-            return text
+                this.worker.worker.onmessageerror = (error) => {
+                    console.error('🚨 Tesseract Worker Message Error:', error)
+                }
+            }
+
+            return this.worker
         } catch (error) {
-            console.error('OCR error:', error)
-            throw new Error('Failed to extract text from image')
+            console.error('❌ Failed to initialize OCR worker:', error)
+            throw new Error('Failed to initialize OCR system')
         }
     }
 
-    // Clean and preprocess OCR text
+    // Cleanup worker
+    async cleanup() {
+        if (this.worker) {
+            try {
+                await this.worker.terminate()
+                this.worker = null
+            } catch (error) {
+                console.error('Warning: Error terminating worker:', error)
+            }
+        }
+    }
+
+    // Extract text from image using Tesseract with robust error handling
+    async extractTextFromImage(imagePath) {
+        let worker = null
+
+        try {
+            console.log('🔍 Starting OCR processing for:', imagePath)
+
+            // Check if file exists and is readable
+            if (!fs.existsSync(imagePath)) {
+                throw new Error('Image file does not exist')
+            }
+
+            // Check file size (avoid processing very large files)
+            const stats = fs.statSync(imagePath)
+            const fileSizeInMB = stats.size / (1024 * 1024)
+            if (fileSizeInMB > 10) {
+                throw new Error('Image file too large (max 10MB)')
+            }
+
+            // Check if file is too small (likely corrupted)
+            if (stats.size < 100) {
+                throw new Error('Image file appears to be corrupted (file too small)')
+            }
+
+            console.log(`📁 File size: ${fileSizeInMB.toFixed(2)}MB`)
+
+            // Basic file format validation
+            const extension = path.extname(imagePath).toLowerCase()
+            const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+            if (!allowedExtensions.includes(extension)) {
+                throw new Error('Unsupported image format')
+            }
+
+            console.log('📋 File validation passed, creating Tesseract worker...')
+
+            // Create and properly initialize a fresh worker for each request
+            worker = await Tesseract.createWorker()
+            console.log('🔧 Worker created, loading engine...')
+
+            await worker.load()
+            console.log('🔧 Engine loaded, loading language...')
+
+            await worker.loadLanguage('eng')
+            console.log('🔧 Language loaded, initializing...')
+
+            await worker.initialize('eng')
+            console.log('✅ Worker fully initialized')
+
+            // Test file readability
+            try {
+                const fileBuffer = fs.readFileSync(imagePath)
+                console.log(`📄 File read successfully, buffer size: ${fileBuffer.length} bytes`)
+            } catch (readError) {
+                console.error('❌ Cannot read file:', readError)
+                throw new Error('Cannot read image file: ' + readError.message)
+            }
+
+            // Wrap the OCR operation in a Promise with timeout
+            const ocrResult = await Promise.race([
+                (async () => {
+                    try {
+                        console.log('📊 Starting OCR recognition...')
+                        const result = await worker.recognize(imagePath)
+                        console.log('� OCR recognition completed successfully')
+                        return result.data.text
+                    } catch (recognizeError) {
+                        console.error('🚨 OCR recognition error details:')
+                        console.error('  - Error object:', recognizeError)
+                        console.error('  - Error message:', recognizeError?.message)
+                        console.error('  - Error name:', recognizeError?.name)
+                        console.error('  - Error stack:', recognizeError?.stack)
+                        console.error('  - Error toString:', recognizeError?.toString())
+
+                        // Create a proper error with the information we have
+                        const errorMsg = recognizeError?.message || recognizeError?.toString() || 'Unknown OCR error'
+                        throw new Error(`OCR recognition failed: ${errorMsg}`)
+                    }
+                })(),
+
+                // Timeout after 60 seconds
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('OCR processing timed out')), 60000)
+                )
+            ])
+
+            console.log('✅ OCR processing completed successfully')
+            return ocrResult
+
+        } catch (error) {
+            console.error('❌ OCR error:', error.message)
+            console.error('❌ OCR error type:', error.name)
+            console.error('❌ OCR error stack:', error.stack)
+
+            // Safely get error message and ensure it's a string
+            const errorMessage = (error && error.message) ? String(error.message) : ''
+            const errorName = (error && error.name) ? String(error.name) : ''
+
+            // Handle specific error types
+            if (errorName === 'DataCloneError' ||
+                errorMessage.includes('could not be cloned') ||
+                errorMessage.includes('DataCloneError')) {
+                throw new Error('OCR system configuration error. Please try uploading the image again.')
+            }
+
+            if (errorMessage.includes('read error') ||
+                errorMessage.includes('bad data') ||
+                errorMessage.includes('cannot be read') ||
+                errorMessage.includes('Corrupt JPEG') ||
+                errorMessage.includes('Error attempting to read image') ||
+                errorMessage.includes('worker encountered an error') ||
+                errorMessage.includes('worker message error') ||
+                errorMessage.includes('extraneous bytes')) {
+                throw new Error('The uploaded image is corrupted or in an unsupported format. Please try uploading a clear, high-quality image.')
+            }
+
+            if (errorMessage.includes('file does not exist')) {
+                throw new Error('Image file not found. Please try uploading again.')
+            }
+
+            if (errorMessage.includes('too large')) {
+                throw error // Pass through size error as-is
+            }
+
+            if (errorMessage.includes('too small') || errorMessage.includes('corrupted')) {
+                throw error // Pass through corruption error as-is
+            }
+
+            if (errorMessage.includes('Unsupported image format')) {
+                throw error // Pass through format error as-is
+            }
+
+            if (errorMessage.includes('timed out')) {
+                throw new Error('OCR processing took too long. Please try with a smaller or clearer image.')
+            }
+
+            if (errorMessage.includes('initialize OCR system')) {
+                throw error // Pass through initialization error as-is
+            }
+
+            if (errorMessage.includes('configuration')) {
+                throw error // Pass through configuration errors as-is
+            }
+
+            // Generic OCR error
+            throw new Error('Failed to extract text from image. Please ensure the image is clear and try again.')
+        } finally {
+            // Always cleanup the worker
+            if (worker) {
+                try {
+                    await worker.terminate()
+                } catch (cleanupError) {
+                    console.error('Warning: Error cleaning up OCR worker:', cleanupError.message)
+                }
+            }
+        }
+    }    // Clean and preprocess OCR text
     cleanOCRText(rawText) {
         return rawText
             .split('\n')

@@ -28,20 +28,36 @@ const storage = multer.diskStorage({
 
 // File filter
 const fileFilter = (req, file, cb) => {
+    console.log(`🔍 Validating file: ${file.originalname} (${file.mimetype})`)
+
     // Check file type
     const allowedTypes = [
         'image/jpeg',
         'image/jpg',
         'image/png',
         'image/gif',
+        'image/webp',
         'application/pdf'
     ]
 
-    if (allowedTypes.includes(file.mimetype)) {
-        cb(null, true)
-    } else {
-        cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and PDF files are allowed.'), false)
+    if (!allowedTypes.includes(file.mimetype)) {
+        console.log(`❌ Invalid file type: ${file.mimetype}`)
+        return cb(new Error('Invalid file type. Only JPEG, PNG, GIF, WebP, and PDF files are allowed.'), false)
     }
+
+    // Additional validation for image files
+    if (file.mimetype.startsWith('image/')) {
+        const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+        const fileExtension = extname(file.originalname).toLowerCase()
+
+        if (!allowedExtensions.includes(fileExtension)) {
+            console.log(`❌ File extension mismatch: ${fileExtension} for ${file.mimetype}`)
+            return cb(new Error('File extension does not match the file type.'), false)
+        }
+    }
+
+    console.log(`✅ File validation passed`)
+    cb(null, true)
 }
 
 const upload = multer({

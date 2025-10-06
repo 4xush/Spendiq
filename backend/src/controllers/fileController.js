@@ -66,67 +66,147 @@ export const processReceipt = async (req, res) => {
     }
 }
 
-// Async receipt processing function
+// Async receipt processing function with enhanced error handling
 async function processReceiptAsync(receiptId, filePath, userId) {
+    // Wrap in additional error protection
+    const processWithErrorProtection = async () => {
+        try {
+            console.log(`🔄 Processing receipt ${receiptId} for user ${userId}`)
+
+            // Extract text using OCR with timeout
+            const rawText = await Promise.race([
+                ocrService.extractTextFromImage(filePath),
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Overall processing timeout')), 90000) // 90 second timeout
+                )
+            ])
+
+            const cleanText = ocrService.cleanOCRText(rawText)
+
+            console.log(`📝 OCR extracted ${cleanText.length} characters`)
+
+            // Analyze with Gemini AI
+            const extractedData = await getGeminiService().analyzeReceipt(cleanText)
+
+            console.log(`🤖 Gemini analysis completed with confidence: ${extractedData.confidence}`)
+
+            // Update receipt with extracted data
+            const receipt = await Receipt.findByIdAndUpdate(
+                receiptId,
+                {
+                    status: 'completed',
+                    ocrText: cleanText,
+                    extractedData
+                },
+                { new: true }
+            )
+
+            // Create transaction if data is confident enough
+            if (extractedData.confidence > 0.7 && extractedData.amount) {
+                const transaction = new Transaction({
+                    userId,
+                    type: 'expense',
+                    amount: extractedData.amount,
+                    category: extractedData.category || 'Other',
+                    description: `${extractedData.merchant || 'Receipt'} - Auto-extracted`,
+                    date: extractedData.date ? new Date(extractedData.date) : new Date(),
+                    source: 'receipt',
+                    receiptUrl: `/uploads/${receipt.filename}`,
+                    metadata: {
+                        confidence: extractedData.confidence,
+                        originalText: cleanText,
+                        merchant: extractedData.merchant
+                    }
+                })
+
+                await transaction.save()
+
+                // Link transaction to receipt
+                receipt.transactionId = transaction._id
+                await receipt.save()
+
+                console.log(`💰 Transaction created with ID: ${transaction._id}`)
+            } else {
+                console.log(`⚠️ Transaction not created - low confidence (${extractedData.confidence}) or missing amount`)
+            }
+
+            console.log(`✅ Receipt processing completed successfully`)
+
+        } catch (error) {
+            console.error('❌ Receipt processing error:', error.message)
+            console.error('❌ Error type:', error.name)
+
+            // Determine error type for better user feedback
+            let userMessage = 'Failed to process receipt'
+
+            // Safely get error message and ensure it's a string
+            const errorMessage = (error && error.message) ? String(error.message) : ''
+            const errorName = (error && error.name) ? String(error.name) : ''
+
+            if (errorMessage.includes('OCR system configuration error') ||
+                errorMessage.includes('configuration') ||
+                errorMessage.includes('DataCloneError') ||
+                errorMessage.includes('could not be cloned')) {
+                userMessage = 'Image processing system error. Please try uploading the image again.'
+            } else if (errorMessage.includes('corrupted') ||
+                errorMessage.includes('unsupported format') ||
+                errorMessage.includes('cannot be read') ||
+                errorMessage.includes('Error attempting to read image') ||
+                errorMessage.includes('Corrupt JPEG')) {
+                userMessage = 'The uploaded image appears to be corrupted or damaged. Please try uploading a clear, high-quality image.'
+            } else if (errorMessage.includes('Failed to analyze receipt with AI')) {
+                userMessage = 'AI analysis failed. The receipt text may be unclear or incomplete.'
+            } else if (errorMessage.includes('file does not exist')) {
+                userMessage = 'Image file not found. Please try uploading again.'
+            } else if (errorMessage.includes('too large')) {
+                userMessage = errorMessage // Use the specific size error message
+            } else if (errorMessage.includes('timeout')) {
+                userMessage = 'Processing took too long. Please try with a smaller or clearer image.'
+            } else if (errorMessage.includes('worker') || errorMessage.includes('Worker') ||
+                errorName === 'DataCloneError') {
+                userMessage = 'Image processing failed. The image may be corrupted or in an unsupported format.'
+            }
+
+            // Update receipt with error status
+            try {
+                await Receipt.findByIdAndUpdate(receiptId, {
+                    status: 'failed',
+                    error: {
+                        message: userMessage,
+                        timestamp: new Date(),
+                        type: error.name || 'ProcessingError'
+                    }
+                })
+                console.log(`📝 Receipt ${receiptId} marked as failed with error: ${userMessage}`)
+            } catch (dbError) {
+                console.error('❌ Failed to update receipt status in database:', dbError)
+            }
+
+            // Don't re-throw the error to prevent server crash
+        }
+    }
+
+    // Execute with additional error protection
     try {
-        // Extract text using OCR
-        const rawText = await ocrService.extractTextFromImage(filePath)
-        const cleanText = ocrService.cleanOCRText(rawText)
+        await processWithErrorProtection()
+    } catch (criticalError) {
+        console.error('🚨 Critical error in receipt processing:', criticalError)
 
-        // Analyze with Gemini AI
-        const extractedData = await getGeminiService().analyzeReceipt(cleanText)
-
-        // Update receipt with extracted data
-        const receipt = await Receipt.findByIdAndUpdate(
-            receiptId,
-            {
-                status: 'completed',
-                ocrText: cleanText,
-                extractedData
-            },
-            { new: true }
-        )
-
-        // Create transaction if data is confident enough
-        if (extractedData.confidence > 0.7 && extractedData.amount) {
-            const transaction = new Transaction({
-                userId,
-                type: 'expense',
-                amount: extractedData.amount,
-                category: extractedData.category || 'Other',
-                description: `${extractedData.merchant || 'Receipt'} - Auto-extracted`,
-                date: extractedData.date ? new Date(extractedData.date) : new Date(),
-                source: 'receipt',
-                receiptUrl: `/uploads/${receipt.filename}`,
-                metadata: {
-                    confidence: extractedData.confidence,
-                    originalText: cleanText,
-                    merchant: extractedData.merchant
+        // Last resort error handling
+        try {
+            await Receipt.findByIdAndUpdate(receiptId, {
+                status: 'failed',
+                error: {
+                    message: 'System error occurred during processing. Please try again.',
+                    timestamp: new Date(),
+                    type: 'CriticalError'
                 }
             })
-
-            await transaction.save()
-
-            // Link transaction to receipt
-            receipt.transactionId = transaction._id
-            await receipt.save()
+        } catch (dbError) {
+            console.error('❌ Failed to update receipt status:', dbError)
         }
-
-    } catch (error) {
-        console.error('Receipt processing error:', error)
-
-        // Update receipt with error status
-        await Receipt.findByIdAndUpdate(receiptId, {
-            status: 'failed',
-            error: {
-                message: error.message,
-                details: error.stack
-            }
-        })
     }
-}
-
-// Process PDF bank statement
+}// Process PDF bank statement
 export const processPDF = async (req, res) => {
     try {
         if (!req.file) {

@@ -28,7 +28,35 @@ function Upload() {
 
     if (processingItems.length === 0) return;
 
+    let pollCount = 0;
+    const maxPolls = 60; // Maximum 2 minutes of polling (60 * 2 seconds)
+
     const pollInterval = setInterval(async () => {
+      pollCount++;
+
+      // Stop polling after maximum attempts
+      if (pollCount > maxPolls) {
+        console.log("⏰ Polling timeout reached, stopping polling");
+        clearInterval(pollInterval);
+
+        // Mark long-running items as timed out
+        setUploadResults((prev) =>
+          prev.map((result) =>
+            result.status === "processing"
+              ? {
+                  ...result,
+                  status: "failed",
+                  error: {
+                    message:
+                      "Processing timed out. Please try uploading again.",
+                  },
+                }
+              : result
+          )
+        );
+        return;
+      }
+
       for (const item of processingItems) {
         try {
           const response = await api.get(`/files/receipt/${item.receiptId}`);
@@ -49,13 +77,16 @@ function Upload() {
               )
             );
 
-            // Show notification
+            // Show notification with specific error message
             if (receipt.status === "completed") {
               toast.success(
                 `Receipt "${item.filename}" processed successfully!`
               );
             } else if (receipt.status === "failed") {
-              toast.error(`Failed to process "${item.filename}"`);
+              const errorMessage =
+                receipt.error?.message ||
+                `Failed to process "${item.filename}"`;
+              toast.error(errorMessage);
             }
           }
         } catch (error) {
@@ -67,8 +98,63 @@ function Upload() {
     return () => clearInterval(pollInterval);
   }, [uploadResults]);
 
+  const validateFile = (file, type) => {
+    // Check file size (5MB max)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast.error("File too large. Maximum size is 5MB.");
+      return false;
+    }
+
+    // Check minimum file size (100 bytes)
+    if (file.size < 100) {
+      toast.error("File appears to be corrupted or empty.");
+      return false;
+    }
+
+    if (type === "receipt") {
+      // Check image file types
+      const allowedImageTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+      ];
+      if (!allowedImageTypes.includes(file.type)) {
+        toast.error(
+          "Invalid image format. Please upload JPEG, PNG, GIF, or WebP files."
+        );
+        return false;
+      }
+
+      // Check file extension matches type
+      const extension = file.name.split(".").pop()?.toLowerCase();
+      const validExtensions = ["jpg", "jpeg", "png", "gif", "webp"];
+      if (!validExtensions.includes(extension)) {
+        toast.error(
+          "Invalid file extension. Please ensure your image has a proper extension."
+        );
+        return false;
+      }
+    } else if (type === "pdf") {
+      // Check PDF file type
+      if (file.type !== "application/pdf") {
+        toast.error("Invalid file format. Please upload PDF files only.");
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   const handleFileUpload = async (file, type) => {
     if (!file) return;
+
+    // Validate file before uploading
+    if (!validateFile(file, type)) {
+      return;
+    }
 
     const formData = new FormData();
     formData.append(type, file);
@@ -100,7 +186,9 @@ function Upload() {
       ]);
     } catch (error) {
       console.error("Upload error:", error);
-      toast.error(`Failed to upload ${type}`);
+      const errorMessage =
+        error.response?.data?.error || `Failed to upload ${type}`;
+      toast.error(errorMessage);
     } finally {
       setUploading(false);
     }
@@ -426,7 +514,7 @@ function Upload() {
                       <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-200">
                         <p className="text-red-800 text-sm">
                           ❌{" "}
-                          {result.error ||
+                          {result.error?.message ||
                             "Processing failed. Please try uploading again."}
                         </p>
                       </div>
@@ -452,6 +540,8 @@ function Upload() {
                   <li>• Capture the entire receipt including totals</li>
                   <li>• Avoid shadows and reflections</li>
                   <li>• Keep the receipt flat and straight</li>
+                  <li>• Use JPEG, PNG, GIF, or WebP formats</li>
+                  <li>• Maximum file size: 5MB</li>
                 </ul>
               </div>
 
@@ -462,6 +552,21 @@ function Upload() {
                   <li>• Ensure the PDF contains selectable text</li>
                   <li>• One statement file at a time works best</li>
                   <li>• Check that all transactions are visible</li>
+                  <li>• Maximum file size: 5MB</li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="font-medium text-gray-900 mb-2">
+                  Troubleshooting:
+                </h4>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• If processing fails, try a higher quality image</li>
+                  <li>• Avoid blurry or corrupted images</li>
+                  <li>• Check that text is clearly visible in the image</li>
+                  <li>
+                    • Try uploading from a different device if issues persist
+                  </li>
                 </ul>
               </div>
             </div>

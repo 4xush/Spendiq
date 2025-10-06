@@ -84,8 +84,18 @@ transactionSchema.statics.getPaginated = function (userId, options = {}) {
     if (category) query.category = category
     if (startDate || endDate) {
         query.date = {}
-        if (startDate) query.date.$gte = new Date(startDate)
-        if (endDate) query.date.$lte = new Date(endDate)
+        if (startDate) {
+            // Set to start of day
+            const start = new Date(startDate)
+            start.setHours(0, 0, 0, 0)
+            query.date.$gte = start
+        }
+        if (endDate) {
+            // Set to end of day to include all transactions on end date
+            const end = new Date(endDate)
+            end.setHours(23, 59, 59, 999)
+            query.date.$lte = end
+        }
     }
     if (search) {
         query.$or = [

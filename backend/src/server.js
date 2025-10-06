@@ -17,6 +17,34 @@ import errorHandler from './middleware/errorHandler.js'
 
 // Load environment variables
 dotenv.config()
+
+// Global error handlers to prevent server crashes
+process.on('uncaughtException', (error) => {
+    console.error('🚨 Uncaught Exception:', error.name, error.message)
+    console.error('Stack:', error.stack)
+    // Log the error but don't exit in development
+    if (process.env.NODE_ENV === 'production') {
+        console.error('🛑 Shutting down server due to uncaught exception')
+        process.exit(1)
+    }
+})
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('🚨 Unhandled Rejection at:', promise, 'reason:', reason)
+
+    // Handle specific known issues
+    if (reason && reason.name === 'DataCloneError') {
+        console.error('🔧 DataCloneError caught - this is a known Tesseract.js worker issue')
+        return // Don't exit for DataCloneError as it's handled in the OCR service
+    }
+
+    // Log the error but don't exit in development
+    if (process.env.NODE_ENV === 'production') {
+        console.error('🛑 Shutting down server due to unhandled rejection')
+        process.exit(1)
+    }
+})
+
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
