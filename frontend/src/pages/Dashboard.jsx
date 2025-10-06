@@ -6,34 +6,13 @@ import {
   DollarSign,
   Receipt,
   Plus,
-  ArrowUpRight,
-  ArrowDownRight,
 } from "lucide-react";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-} from "recharts";
 import api from "../utils/api";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { Link } from "react-router-dom";
-
-const COLORS = [
-  "#3B82F6",
-  "#EF4444",
-  "#10B981",
-  "#F59E0B",
-  "#8B5CF6",
-  "#EC4899",
-];
+import RecentTransactions from "./Dashboard/RecentTransactions";
+import SpendingByCategory from "./Dashboard/SpendingByCategory";
+import SevenDayTrend from "./Dashboard/SevenDayTrend";
 
 function Dashboard() {
   const { user } = useAuth();
@@ -186,166 +165,25 @@ function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Spending by Category */}
-        <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Spending by Category
-          </h3>
-          {categoryData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={categoryData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ category, percentage }) =>
-                    `${category}: ${percentage}%`
-                  }
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="amount"
-                >
-                  {categoryData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => formatCurrency(value)} />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex items-center justify-center h-64 text-gray-500">
-              No spending data available
-            </div>
-          )}
-        </div>
+        <SpendingByCategory
+          categoryData={categoryData}
+          formatCurrency={formatCurrency}
+        />
 
         {/* 7-Day Trend */}
-        <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            7-Day Trend
-          </h3>
-          {trendData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={trendData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" tickFormatter={formatDate} />
-                <YAxis tickFormatter={(value) => `$${value}`} />
-                <Tooltip
-                  labelFormatter={(label) => `Date: ${formatDate(label)}`}
-                  formatter={(value) => [formatCurrency(value), ""]}
-                />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="income"
-                  stroke="#10B981"
-                  strokeWidth={2}
-                  name="Income"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="expenses"
-                  stroke="#EF4444"
-                  strokeWidth={2}
-                  name="Expenses"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex items-center justify-center h-64 text-gray-500">
-              No trend data available
-            </div>
-          )}
-        </div>
+        <SevenDayTrend
+          trendData={trendData}
+          formatCurrency={formatCurrency}
+          formatDate={formatDate}
+        />
       </div>
 
       {/* Recent Transactions */}
-      <div className="card">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">
-            Recent Transactions
-          </h3>
-          <Link
-            to="/transactions"
-            className="text-primary-600 hover:text-primary-500 text-sm font-medium"
-          >
-            View all
-          </Link>
-        </div>
-
-        {recentTransactions.length > 0 ? (
-          <div className="space-y-3">
-            {recentTransactions.map((transaction) => (
-              <div
-                key={transaction._id}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-              >
-                <div className="flex items-center">
-                  <div
-                    className={`p-2 rounded-lg ${
-                      transaction.type === "income"
-                        ? "bg-green-100"
-                        : "bg-red-100"
-                    }`}
-                  >
-                    {transaction.type === "income" ? (
-                      <ArrowUpRight
-                        className={`h-4 w-4 ${
-                          transaction.type === "income"
-                            ? "text-green-600"
-                            : "text-red-600"
-                        }`}
-                      />
-                    ) : (
-                      <ArrowDownRight
-                        className={`h-4 w-4 ${
-                          transaction.type === "income"
-                            ? "text-green-600"
-                            : "text-red-600"
-                        }`}
-                      />
-                    )}
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-900">
-                      {transaction.description || transaction.category}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {transaction.category} • {formatDate(transaction.date)}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p
-                    className={`text-sm font-medium ${
-                      transaction.type === "income"
-                        ? "text-green-600"
-                        : "text-red-600"
-                    }`}
-                  >
-                    {transaction.type === "income" ? "+" : "-"}
-                    {formatCurrency(transaction.amount)}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8 text-gray-500">
-            <Receipt className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-            <p>No transactions yet</p>
-            <Link
-              to="/transactions"
-              className="text-primary-600 hover:text-primary-500 text-sm"
-            >
-              Add your first transaction
-            </Link>
-          </div>
-        )}
-      </div>
+      <RecentTransactions
+        recentTransactions={recentTransactions}
+        formatCurrency={formatCurrency}
+        formatDate={formatDate}
+      />
     </div>
   );
 }

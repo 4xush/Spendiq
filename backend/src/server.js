@@ -62,15 +62,23 @@ app.use(cors({
     credentials: true
 }))
 
-// Rate limiting
-const limiter = rateLimit({
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
-    message: {
-        error: 'Too many requests from this IP, please try again later'
-    }
-})
-app.use('/api/', limiter)
+// Rate limiting - configurable by environment
+const isProduction = process.env.NODE_ENV === 'production'
+const enableRateLimit = process.env.ENABLE_RATE_LIMIT === 'true' || isProduction
+
+if (enableRateLimit) {
+    const limiter = rateLimit({
+        windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
+        max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
+        message: {
+            error: 'Too many requests from this IP, please try again later'
+        }
+    })
+    app.use('/api/', limiter)
+    console.log(`🛡️  Rate limiting enabled: ${parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100} requests per ${(parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000) / 60000} minutes`)
+} else {
+    console.log('🚀 Rate limiting disabled for development mode')
+}
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }))
