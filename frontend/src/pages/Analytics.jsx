@@ -135,7 +135,7 @@ function Analytics() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Sticky Header */}
-      <div className="bg-white sticky top-0 z-10 shadow-sm rounded-lg pd-2 mb-2">
+      <div className="bg-white top-0 z-10 shadow-sm rounded-lg pd-2 mb-2">
   <div className="container mx-auto px-4 py-4">
     {/* Header */}
     <div className="flex items-center justify-between mb-4">

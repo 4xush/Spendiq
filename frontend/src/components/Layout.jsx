@@ -208,7 +208,7 @@ function Layout({ children }) {
 
         {/* Page Content */}
         <main className="pb-20 lg:pb-6">
-          <div className="mx-auto max-w-7xl px-3 py-4 sm:px-4 sm:py-6 lg:px-8">
+          <div className="mx-auto max-w-7xl px-3 py-4 sm:px-4 sm:py-6 lg:px-4">
             {children}
           </div>
         </main>

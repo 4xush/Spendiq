@@ -157,7 +157,9 @@ const Transactions = () => {
 
   const selectAllTransactions = () => {
     setSelectedTransactions(
-      selectedTransactions.length === transactions.length ? [] : [...transactions]
+      selectedTransactions.length === transactions.length
+        ? []
+        : [...transactions]
     );
   };
 
@@ -173,7 +175,9 @@ const Transactions = () => {
 
       if (deleteData.deleteType === "selected") {
         setTransactions((prev) =>
-          prev.filter((t) => !selectedTransactions.some((st) => st._id === t._id))
+          prev.filter(
+            (t) => !selectedTransactions.some((st) => st._id === t._id)
+          )
         );
       } else {
         await fetchTransactions();
@@ -182,7 +186,9 @@ const Transactions = () => {
       setSelectedTransactions([]);
       setBulkSelectMode(false);
       setShowBulkDeleteModal(false);
-      toast.success(`Successfully deleted ${result.deletedCount} transaction(s)`);
+      toast.success(
+        `Successfully deleted ${result.deletedCount} transaction(s)`
+      );
     } catch (err) {
       toast.error("Failed to delete transactions");
     }
@@ -202,19 +208,26 @@ const Transactions = () => {
 
   const handleTransactionUpdate = async (updatedTransaction) => {
     setTransactions((prev) =>
-      prev.map((t) => (t._id === updatedTransaction._id ? updatedTransaction : t))
+      prev.map((t) =>
+        t._id === updatedTransaction._id ? updatedTransaction : t
+      )
     );
     setEditingTransaction(null);
   };
 
   if (loading) return <LoadingSpinner />;
 
-  const hasActiveFilters = filters.type || filters.category || filters.startDate || filters.endDate || filters.search;
+  const hasActiveFilters =
+    filters.type ||
+    filters.category ||
+    filters.startDate ||
+    filters.endDate ||
+    filters.search;
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header - Mobile Optimized */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <div className="bg-white border-b border-gray-200 top-0 z-10 rounded-lg">
         <div className="container mx-auto px-4">
           <div className="py-4">
             {/* Top Row */}
@@ -296,7 +309,9 @@ const Transactions = () => {
                       <span className="hidden sm:inline">
                         Delete ({selectedTransactions.length})
                       </span>
-                      <span className="sm:hidden">{selectedTransactions.length}</span>
+                      <span className="sm:hidden">
+                        {selectedTransactions.length}
+                      </span>
                     </button>
 
                     <button
@@ -360,19 +375,21 @@ const Transactions = () => {
 
       {/* Filters */}
       {showFilters && (
-        <div className="bg-white border-b border-gray-200">
-          <div className="container mx-auto px-4 py-4">
-            <TransactionFilters
-              filters={filters}
-              onFiltersChange={handleFiltersChange}
-              onClearFilters={clearFilters}
-            />
+        <div className="bg-gray-50 border-b border-gray-100">
+          <div className="container mx-auto px-2 py-2">
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+              <TransactionFilters
+                filters={filters}
+                onFiltersChange={handleFiltersChange}
+                onClearFilters={clearFilters}
+              />
+            </div>
           </div>
         </div>
       )}
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto py-3">
         {transactions.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -411,7 +428,9 @@ const Transactions = () => {
                     isSelected={selectedTransactions.some(
                       (t) => t._id === transaction._id
                     )}
-                    onToggleSelect={() => toggleTransactionSelection(transaction)}
+                    onToggleSelect={() =>
+                      toggleTransactionSelection(transaction)
+                    }
                     bulkSelectMode={bulkSelectMode}
                   />
                 ))}
@@ -445,7 +464,7 @@ const Transactions = () => {
                   {[...Array(pagination.totalPages)].map((_, index) => {
                     const pageNum = index + 1;
                     const current = pagination.currentPage;
-                    
+
                     // Show first, last, current, and adjacent pages
                     if (
                       pageNum === 1 ||

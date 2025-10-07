@@ -98,10 +98,18 @@ function Upload() {
             );
 
             if (receipt.status === "completed" && receipt.extractedData) {
-              toast.success(`Receipt "${item.filename}" processed successfully!`);
-              showTransactionConfirmation(receipt.extractedData, item.receiptId, "receipt");
+              toast.success(
+                `Receipt "${item.filename}" processed successfully!`
+              );
+              showTransactionConfirmation(
+                receipt.extractedData,
+                item.receiptId,
+                "receipt"
+              );
             } else if (receipt.status === "failed") {
-              toast.error(receipt.error?.message || `Failed to process "${item.filename}"`);
+              toast.error(
+                receipt.error?.message || `Failed to process "${item.filename}"`
+              );
             }
           }
         } catch (error) {
@@ -189,16 +197,23 @@ function Upload() {
       });
 
       updateUploadResult(editingTransaction.resultId, (result) => {
-        const hasMultiple = Array.isArray(result.extractedData) && result.extractedData.length > 1;
+        const hasMultiple =
+          Array.isArray(result.extractedData) &&
+          result.extractedData.length > 1;
         const remaining = hasMultiple ? result.extractedData.slice(1) : [];
 
         return {
           ...result,
           extractedData: remaining,
           transactionsCreated: (result.transactionsCreated || 0) + 1,
-          createdTransactions: [...(result.createdTransactions || []), response.data.transaction],
+          createdTransactions: [
+            ...(result.createdTransactions || []),
+            response.data.transaction,
+          ],
           needsConfirmation: remaining.length > 0,
-          transaction: hasMultiple ? result.transaction : response.data.transaction,
+          transaction: hasMultiple
+            ? result.transaction
+            : response.data.transaction,
           status: "completed",
         };
       });
@@ -226,7 +241,10 @@ function Upload() {
       setCreatingTransaction(true);
 
       const response = await api.post("/transactions", {
-        description: transactionData.merchant || transactionData.description || "Transaction",
+        description:
+          transactionData.merchant ||
+          transactionData.description ||
+          "Transaction",
         amount: parseFloat(transactionData.amount) || 0,
         date: transactionData.date || new Date().toISOString().split("T")[0],
         category: transactionData.category || "Uncategorized",
@@ -247,9 +265,14 @@ function Upload() {
         return {
           ...result,
           extractedData: remaining,
-          createdTransactions: [...(result.createdTransactions || []), response.data.transaction],
+          createdTransactions: [
+            ...(result.createdTransactions || []),
+            response.data.transaction,
+          ],
           needsConfirmation: remaining.length > 0,
-          transaction: hasMultiple ? result.transaction : response.data.transaction,
+          transaction: hasMultiple
+            ? result.transaction
+            : response.data.transaction,
           status: "completed",
         };
       });
@@ -303,7 +326,9 @@ function Upload() {
 
         if (extractedData?.length > 0) {
           toast.success(
-            `${actualType.toUpperCase()} processed! Found ${extractedData.length} transaction(s).`
+            `${actualType.toUpperCase()} processed! Found ${
+              extractedData.length
+            } transaction(s).`
           );
 
           const resultId = Date.now();
@@ -321,7 +346,9 @@ function Upload() {
             },
           ]);
         } else {
-          toast.warning(`${actualType.toUpperCase()} processed but no transactions found.`);
+          toast.warning(
+            `${actualType.toUpperCase()} processed but no transactions found.`
+          );
           setUploadResults((prev) => [
             ...prev,
             {
@@ -351,15 +378,21 @@ function Upload() {
       }
     } catch (error) {
       console.error("Upload error:", error);
-      const errorMessage = error.response?.data?.error || `Failed to upload ${type}`;
+      const errorMessage =
+        error.response?.data?.error || `Failed to upload ${type}`;
 
       if (actualType === "pdf" || actualType === "image") {
         if (errorMessage.includes("temporarily unavailable")) {
-          toast.error("AI Service temporarily unavailable. Try again later.", { duration: 6000 });
+          toast.error("AI Service temporarily unavailable. Try again later.", {
+            duration: 6000,
+          });
         } else if (errorMessage.includes("rate limit")) {
           toast.error("Rate limit exceeded. Please wait.", { duration: 5000 });
         } else {
-          toast.error(`${actualType.toUpperCase()} processing error: ${errorMessage}`, { duration: 4000 });
+          toast.error(
+            `${actualType.toUpperCase()} processing error: ${errorMessage}`,
+            { duration: 4000 }
+          );
         }
 
         setUploadResults((prev) => [
@@ -401,16 +434,22 @@ function Upload() {
   };
 
   const getStatusText = (status) => {
-    const texts = { processing: "Processing...", completed: "Completed", failed: "Failed" };
+    const texts = {
+      processing: "Processing...",
+      completed: "Completed",
+      failed: "Failed",
+    };
     return texts[status] || "Unknown";
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Upload & Process</h1>
+      <div className="max-w-7xl mx-auto px-4 py-4 sm:py-4">
+        {/* Header - Compact Version with Larger Text */}
+        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+            Upload & Process
+          </h1>
           <p className="text-sm sm:text-base text-gray-600 mt-1">
             Upload receipts and bank statements to extract transactions
           </p>
@@ -425,7 +464,9 @@ function Upload() {
           <div className="space-y-6">
             {activeTab === "receipt" && (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Upload Receipt</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Upload Receipt
+                </h2>
                 <FileUploadZone
                   type="receipt"
                   accept="image/*"
@@ -438,7 +479,9 @@ function Upload() {
                 />
 
                 <div className="mt-4 p-4 bg-blue-50 rounded-xl">
-                  <h4 className="font-medium text-blue-900 text-sm mb-2">How it works:</h4>
+                  <h4 className="font-medium text-blue-900 text-sm mb-2">
+                    How it works:
+                  </h4>
                   <ul className="text-xs sm:text-sm text-blue-800 space-y-1">
                     <li>• Take a clear photo of your receipt</li>
                     <li>• AI extracts merchant, amount, and date</li>
@@ -451,11 +494,15 @@ function Upload() {
 
             {activeTab === "statement" && (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Import Bank Statement</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Import Bank Statement
+                </h2>
 
                 {/* Format Selection */}
                 <div className="mb-6">
-                  <h3 className="text-sm font-medium text-gray-700 mb-3">Choose Format:</h3>
+                  <h3 className="text-sm font-medium text-gray-700 mb-3">
+                    Choose Format:
+                  </h3>
                   <div className="grid sm:grid-cols-2 gap-3">
                     <button
                       onClick={() => setBankStatementType("pdf")}
@@ -469,7 +516,9 @@ function Upload() {
                         <FileText className="h-5 w-5 text-red-500 mr-2" />
                         <span className="font-medium text-gray-900">PDF</span>
                       </div>
-                      <p className="text-xs text-gray-600">Official statements</p>
+                      <p className="text-xs text-gray-600">
+                        Official statements
+                      </p>
                     </button>
 
                     <button
@@ -484,14 +533,18 @@ function Upload() {
                         <Image className="h-5 w-5 text-blue-500 mr-2" />
                         <span className="font-medium text-gray-900">Image</span>
                       </div>
-                      <p className="text-xs text-gray-600">Screenshots/photos</p>
+                      <p className="text-xs text-gray-600">
+                        Screenshots/photos
+                      </p>
                     </button>
                   </div>
                 </div>
 
                 <FileUploadZone
                   type="statement"
-                  accept={bankStatementType === "pdf" ? ".pdf" : ".png,.jpg,.jpeg"}
+                  accept={
+                    bankStatementType === "pdf" ? ".pdf" : ".png,.jpg,.jpeg"
+                  }
                   title={`${bankStatementType.toUpperCase()} Import`}
                   description={`Upload ${bankStatementType} statements to extract transactions`}
                   icon={bankStatementType === "pdf" ? FileText : Image}
@@ -500,17 +553,27 @@ function Upload() {
                   onDragOver={handleDragOver}
                 />
 
-                <div className={`mt-4 p-4 rounded-xl ${
-                  bankStatementType === "pdf" ? "bg-green-50" : "bg-blue-50"
-                }`}>
-                  <h4 className={`font-medium text-sm mb-2 ${
-                    bankStatementType === "pdf" ? "text-green-900" : "text-blue-900"
-                  }`}>
+                <div
+                  className={`mt-4 p-4 rounded-xl ${
+                    bankStatementType === "pdf" ? "bg-green-50" : "bg-blue-50"
+                  }`}
+                >
+                  <h4
+                    className={`font-medium text-sm mb-2 ${
+                      bankStatementType === "pdf"
+                        ? "text-green-900"
+                        : "text-blue-900"
+                    }`}
+                  >
                     Requirements:
                   </h4>
-                  <ul className={`text-xs sm:text-sm space-y-1 ${
-                    bankStatementType === "pdf" ? "text-green-800" : "text-blue-800"
-                  }`}>
+                  <ul
+                    className={`text-xs sm:text-sm space-y-1 ${
+                      bankStatementType === "pdf"
+                        ? "text-green-800"
+                        : "text-blue-800"
+                    }`}
+                  >
                     {bankStatementType === "pdf" ? (
                       <>
                         <li>• Official bank/credit card statements</li>

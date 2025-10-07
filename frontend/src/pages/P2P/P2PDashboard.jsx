@@ -138,52 +138,68 @@ const P2PDashboard = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-            Person-to-Person Transactions
-          </h1>
-          <p className="text-sm sm:text-base text-gray-600">
-            Track money lent, borrowed, and shared with others
-          </p>
+      {/* Header - Minimal & Mobile Responsive */}
+      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+          <div>
+            <h1 className="text-lg sm:text-xl font-bold text-gray-900">
+              Person-to-Person Transactions
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+              Track money lent, borrowed, and shared with others
+            </p>
+          </div>
+          <button
+            onClick={() => setShowForm(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center sm:justify-start gap-2 w-full sm:w-auto text-sm font-medium"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Add P2P Transaction</span>
+          </button>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="btn-primary flex items-center justify-center sm:justify-start gap-2 w-full sm:w-auto"
-        >
-          <Plus className="h-4 w-4" />
-          <span>Add P2P Transaction</span>
-        </button>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {summaryCards.map(({ label, value, icon: Icon, colorClass, iconColorClass, isNetAmount }) => (
-          <div key={label} className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4">
-            <div className="flex items-start gap-2 sm:gap-3">
-              <div className={`p-1.5 sm:p-2 ${colorClass} rounded-md flex-shrink-0`}>
-                <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${iconColorClass}`} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs sm:text-sm font-medium text-gray-600 mb-0.5 sm:mb-1">
-                  {label}
-                </p>
-                <p
-                  className={`text-base sm:text-lg lg:text-xl font-bold truncate ${
-                    isNetAmount
-                      ? value >= 0
-                        ? "text-green-600"
-                        : "text-red-600"
-                      : "text-gray-900"
-                  }`}
+        {summaryCards.map(
+          ({
+            label,
+            value,
+            icon: Icon,
+            colorClass,
+            iconColorClass,
+            isNetAmount,
+          }) => (
+            <div
+              key={label}
+              className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4"
+            >
+              <div className="flex items-start gap-2 sm:gap-3">
+                <div
+                  className={`p-1.5 sm:p-2 ${colorClass} rounded-md flex-shrink-0`}
                 >
-                  {formatCurrency(value)}
-                </p>
+                  <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${iconColorClass}`} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600 mb-0.5 sm:mb-1">
+                    {label}
+                  </p>
+                  <p
+                    className={`text-base sm:text-lg lg:text-xl font-bold truncate ${
+                      isNetAmount
+                        ? value >= 0
+                          ? "text-green-600"
+                          : "text-red-600"
+                        : "text-gray-900"
+                    }`}
+                  >
+                    {formatCurrency(value)}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          )
+        )}
       </div>
 
       {/* Filters */}
@@ -247,8 +263,8 @@ const P2PDashboard = () => {
             <p className="text-sm sm:text-base text-gray-600 mb-4">
               Start tracking money between you and others
             </p>
-            <button 
-              onClick={() => setShowForm(true)} 
+            <button
+              onClick={() => setShowForm(true)}
               className="btn-primary w-full sm:w-auto"
             >
               Add First P2P Transaction
@@ -291,7 +307,8 @@ const P2PDashboard = () => {
                         {transaction.personToPerson.dueDate && (
                           <span className="flex items-center gap-1 flex-shrink-0">
                             <Clock className="h-3 w-3" />
-                            Due: {formatDate(transaction.personToPerson.dueDate)}
+                            Due:{" "}
+                            {formatDate(transaction.personToPerson.dueDate)}
                           </span>
                         )}
                         {transaction.personToPerson.personContact && (

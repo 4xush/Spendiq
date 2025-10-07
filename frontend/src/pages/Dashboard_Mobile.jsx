@@ -138,12 +138,12 @@ function DashboardMobile() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-white shadow-sm border-b rounded-md">
         <div className="px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-bold text-gray-900">
-                Hi, {user?.name?.split(" ")[0]}! 👋
+                Hi, {user?.name?.split(" ")[0]}!
               </h1>
               <p className="text-sm text-gray-600">Welcome back</p>
             </div>
@@ -171,7 +171,7 @@ function DashboardMobile() {
                     Net Balance
                   </p>
                   <p className="text-lg font-bold">
-                    {formatCurrencyCompact(summary?.netIncome || 0)}
+                    {formatCurrencyCompact(summary?.netAmount || 0)}
                   </p>
                 </div>
                 <IndianRupee className="h-5 w-5 text-blue-200" />
@@ -219,7 +219,7 @@ function DashboardMobile() {
                     Transactions
                   </p>
                   <p className="text-sm font-bold text-gray-900">
-                    {summary?.transactionCount || 0}
+                    {summary?.totalTransactions || 0}
                   </p>
                 </div>
               </div>
