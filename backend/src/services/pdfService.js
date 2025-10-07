@@ -57,7 +57,7 @@ class PDFService {
             }
 
         } catch (error) {
-            console.error('❌ PDF extraction error:', error)
+            console.error(' PDF extraction error:', error)
 
             // If direct extraction failed, try OCR as last resort
             try {
@@ -70,7 +70,7 @@ class PDFService {
                     extractionMethod: 'ocr-fallback'
                 }
             } catch (ocrError) {
-                console.error('❌ OCR fallback also failed:', ocrError)
+                console.error(' OCR fallback also failed:', ocrError)
                 throw new Error('Failed to extract text from PDF using both direct extraction and OCR')
             }
         }
@@ -147,7 +147,7 @@ class PDFService {
         } catch (error) {
             // Ensure cleanup even on error
             this.cleanupTempFiles(tempImagePaths)
-            console.error('❌ OCR extraction error:', error)
+            console.error(' OCR extraction error:', error)
             throw new Error('Failed to extract text using OCR: ' + error.message)
         }
     }

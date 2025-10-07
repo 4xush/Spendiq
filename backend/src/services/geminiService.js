@@ -62,7 +62,7 @@ class GeminiService {
                 // console.log('📊 Parsed transaction data:', JSON.stringify(extractedData, null, 2))
                 return extractedData
             } catch (parseError) {
-                console.error('❌ Failed to parse Gemini response:', parseError)
+                console.error(' Failed to parse Gemini response:', parseError)
                 console.error('📄 Raw response that failed to parse:', text)
                 return {
                     amount: null,
@@ -74,7 +74,7 @@ class GeminiService {
                 }
             }
         } catch (error) {
-            console.error('❌ Gemini API error:', error.message)
+            console.error(' Gemini API error:', error.message)
             console.error('🔍 Full error details:', error)
 
             // Handle specific error types

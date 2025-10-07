@@ -29,7 +29,7 @@ class OCRService {
 
             return this.worker
         } catch (error) {
-            console.error('❌ Failed to initialize OCR worker:', error)
+            console.error(' Failed to initialize OCR worker:', error)
             throw new Error('Failed to initialize OCR system')
         }
     }
@@ -99,7 +99,7 @@ class OCRService {
                 const fileBuffer = fs.readFileSync(imagePath)
                 console.log(`📄 File read successfully, buffer size: ${fileBuffer.length} bytes`)
             } catch (readError) {
-                console.error('❌ Cannot read file:', readError)
+                console.error(' Cannot read file:', readError)
                 throw new Error('Cannot read image file: ' + readError.message)
             }
 
@@ -135,9 +135,9 @@ class OCRService {
             return ocrResult
 
         } catch (error) {
-            console.error('❌ OCR error:', error.message)
-            console.error('❌ OCR error type:', error.name)
-            console.error('❌ OCR error stack:', error.stack)
+            console.error(' OCR error:', error.message)
+            console.error(' OCR error type:', error.name)
+            console.error(' OCR error stack:', error.stack)
 
             // Safely get error message and ensure it's a string
             const errorMessage = (error && error.message) ? String(error.message) : ''

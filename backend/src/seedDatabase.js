@@ -19,7 +19,7 @@ const connectDB = async () => {
         await mongoose.connect(process.env.MONGODB_URI);
         console.log('✅ MongoDB Connected for seeding');
     } catch (error) {
-        console.error('❌ MongoDB connection error:', error);
+        console.error(' MongoDB connection error:', error);
         process.exit(1);
     }
 };
@@ -519,7 +519,7 @@ const verifyUser = async () => {
             console.log('✅ User found:', user.name || user.email);
         }
     } catch (error) {
-        console.error('❌ Error verifying user:', error);
+        console.error(' Error verifying user:', error);
     }
 };
 
@@ -577,7 +577,7 @@ const seedDatabase = async () => {
         console.log('🌐 You can now view the dashboard and analytics with demo data');
 
     } catch (error) {
-        console.error('❌ Error seeding database:', error);
+        console.error(' Error seeding database:', error);
     } finally {
         mongoose.connection.close();
         console.log('🔌 Database connection closed');

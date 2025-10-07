@@ -135,8 +135,8 @@ async function processReceiptAsync(receiptId, filePath, userId) {
             console.log(`✅ Receipt processing completed successfully`)
 
         } catch (error) {
-            console.error('❌ Receipt processing error:', error.message)
-            console.error('❌ Error type:', error.name)
+            console.error(' Receipt processing error:', error.message)
+            console.error(' Error type:', error.name)
 
             // Determine error type for better user feedback
             let userMessage = 'Failed to process receipt'
@@ -181,7 +181,7 @@ async function processReceiptAsync(receiptId, filePath, userId) {
                 })
                 console.log(`📝 Receipt ${receiptId} marked as failed with error: ${userMessage}`)
             } catch (dbError) {
-                console.error('❌ Failed to update receipt status in database:', dbError)
+                console.error(' Failed to update receipt status in database:', dbError)
             }
 
             // Don't re-throw the error to prevent server crash
@@ -205,7 +205,7 @@ async function processReceiptAsync(receiptId, filePath, userId) {
                 }
             })
         } catch (dbError) {
-            console.error('❌ Failed to update receipt status:', dbError)
+            console.error(' Failed to update receipt status:', dbError)
         }
     }
 }// Process PDF bank statement
