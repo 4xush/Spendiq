@@ -28,7 +28,7 @@ function Dashboard() {
   const [recentP2P, setRecentP2P] = useState([]);
   const [p2pSummary, setP2pSummary] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [leftWidth, setLeftWidth] = useState(35);
+  const [leftWidth, setLeftWidth] = useState(40);
   const [isResizing, setIsResizing] = useState(false);
   const containerRef = useRef(null);
   const startXRef = useRef(0);

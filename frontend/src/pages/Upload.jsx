@@ -304,6 +304,68 @@ function Upload() {
     toast.success("Transaction skipped!");
   };
 
+  const handleConfirmAll = async (resultId, sourceType) => {
+    try {
+      setCreatingTransaction(true);
+
+      const result = uploadResults.find((r) => r.id === resultId);
+      if (!result || !Array.isArray(result.extractedData)) {
+        toast.error("No transactions to confirm");
+        return;
+      }
+
+      const transactions = result.extractedData;
+      const createdTransactions = [];
+
+      // Create all transactions
+      for (const transactionData of transactions) {
+        try {
+          const response = await api.post("/transactions", {
+            description:
+              transactionData.merchant ||
+              transactionData.description ||
+              "Transaction",
+            amount: parseFloat(transactionData.amount) || 0,
+            date:
+              transactionData.date || new Date().toISOString().split("T")[0],
+            category: transactionData.category || "Uncategorized",
+            type: "expense",
+            source: sourceType,
+            metadata: {
+              merchant: transactionData.merchant,
+              items: transactionData.items || [],
+              confidence: transactionData.confidence || 0.8,
+            },
+          });
+
+          createdTransactions.push(response.data.transaction);
+        } catch (error) {
+          console.error("Error creating transaction:", error);
+          // Continue with other transactions even if one fails
+        }
+      }
+
+      // Update the result
+      updateUploadResult(resultId, (result) => ({
+        ...result,
+        extractedData: [],
+        createdTransactions,
+        needsConfirmation: false,
+        status: "completed",
+        transactionsCreated: createdTransactions.length,
+      }));
+
+      toast.success(
+        `Successfully created ${createdTransactions.length} transaction(s)!`
+      );
+    } catch (error) {
+      console.error("Error confirming all transactions:", error);
+      toast.error("Failed to create some transactions.");
+    } finally {
+      setCreatingTransaction(false);
+    }
+  };
+
   const handleFileUpload = async (file, type) => {
     if (!file) return;
 
@@ -597,6 +659,15 @@ function Upload() {
           <div className="space-y-6">
             <ProcessingStatus uploading={uploading} />
 
+            {/* <UploadResults
+              uploadResults={uploadResults}
+              showTransactionConfirmation={showTransactionConfirmation}
+              navigate={navigate}
+              getStatusIcon={getStatusIcon}
+              getStatusText={getStatusText}
+              onQuickAdd={handleQuickAdd}
+              onQuickSkip={handleQuickSkip}
+            /> */}
             <UploadResults
               uploadResults={uploadResults}
               showTransactionConfirmation={showTransactionConfirmation}
@@ -605,6 +676,8 @@ function Upload() {
               getStatusText={getStatusText}
               onQuickAdd={handleQuickAdd}
               onQuickSkip={handleQuickSkip}
+              onConfirmAll={handleConfirmAll}
+              creatingTransaction={creatingTransaction}
             />
 
             <TipsSection />
