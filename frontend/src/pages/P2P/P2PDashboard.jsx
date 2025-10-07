@@ -8,10 +8,16 @@ import {
   Filter,
   Calendar,
   Phone,
+  Bell,
 } from "lucide-react";
 import api from "../../utils/api";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import P2PTransactionForm from "./P2PTransactionForm";
+import P2PReminderModal from "./P2PReminderModal";
+import {
+  createP2PReminder,
+  showP2PNotification,
+} from "../../utils/notifications";
 import toast from "react-hot-toast";
 
 // Status color mappings
@@ -37,6 +43,9 @@ const P2PDashboard = () => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showReminderModal, setShowReminderModal] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [activeReminders, setActiveReminders] = useState(new Map());
   const [filters, setFilters] = useState({
     status: "",
     type: "",
@@ -88,11 +97,79 @@ const P2PDashboard = () => {
         status: newStatus,
       });
       toast.success("Status updated successfully");
+
+      // Cancel reminder if transaction is completed or cancelled
+      if (
+        (newStatus === "completed" || newStatus === "cancelled") &&
+        activeReminders.has(transactionId)
+      ) {
+        const timeoutId = activeReminders.get(transactionId);
+        clearTimeout(timeoutId);
+        setActiveReminders((prev) => {
+          const newMap = new Map(prev);
+          newMap.delete(transactionId);
+          return newMap;
+        });
+        toast.success("Reminder cancelled");
+      }
+
       fetchData();
     } catch (error) {
       console.error("Failed to update status:", error);
       toast.error("Failed to update status");
     }
+  };
+
+  const handleSetReminder = (transaction, minutes) => {
+    // Cancel existing reminder if any
+    if (activeReminders.has(transaction._id)) {
+      const oldTimeoutId = activeReminders.get(transaction._id);
+      clearTimeout(oldTimeoutId);
+    }
+
+    // Create new reminder
+    const timeoutId = createP2PReminder(
+      transaction.personToPerson.personName,
+      transaction.amount,
+      transaction.personToPerson.type,
+      minutes
+    );
+
+    if (timeoutId) {
+      setActiveReminders(
+        (prev) => new Map(prev.set(transaction._id, timeoutId))
+      );
+
+      const timeText =
+        minutes < 60
+          ? `${minutes} minute${minutes === 1 ? "" : "s"}`
+          : minutes === 60
+          ? "1 hour"
+          : minutes === 1440
+          ? "1 day"
+          : `${Math.round(minutes / 60)} hours`;
+
+      toast.success(`Reminder set for ${timeText}`, {
+        icon: "🔔",
+        duration: 3000,
+      });
+    } else {
+      toast.error("Please allow notifications to set reminders");
+    }
+  };
+
+  const handleReminderClick = (transaction) => {
+    setSelectedTransaction(transaction);
+    setShowReminderModal(true);
+  };
+
+  const handleTestNotification = (transaction) => {
+    showP2PNotification(
+      transaction.personToPerson.personName,
+      transaction.amount,
+      transaction.personToPerson.type
+    );
+    toast.success("Test notification sent!", { icon: "🔔" });
   };
 
   if (loading) {
@@ -141,13 +218,25 @@ const P2PDashboard = () => {
       {/* Header - Minimal & Mobile Responsive */}
       <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-          <div>
-            <h1 className="text-lg sm:text-xl font-bold text-gray-900">
-              Person-to-Person Transactions
-            </h1>
-            <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
-              Track money lent, borrowed, and shared with others
-            </p>
+          <div className="flex-1">
+            <div className="flex items-center gap-3">
+              <div>
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900">
+                  Person-to-Person Transactions
+                </h1>
+                <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+                  Track money lent, borrowed, and shared with others
+                </p>
+              </div>
+              {/* Active Reminders Indicator */}
+              {activeReminders.size > 0 && (
+                <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                  <Bell className="h-3 w-3" />
+                  <span>{activeReminders.size}</span>
+                  <span className="hidden sm:inline">active</span>
+                </div>
+              )}
+            </div>
           </div>
           <button
             onClick={() => setShowForm(true)}
@@ -348,6 +437,22 @@ const P2PDashboard = () => {
                           <span className="sm:hidden">✓</span>
                         </button>
                         <button
+                          onClick={() => handleReminderClick(transaction)}
+                          className={`px-2 py-1 rounded text-xs transition-colors ${
+                            activeReminders.has(transaction._id)
+                              ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                              : "bg-purple-100 text-purple-700 hover:bg-purple-200"
+                          }`}
+                          title="Set Reminder"
+                        >
+                          <span className="hidden sm:inline">
+                            {activeReminders.has(transaction._id)
+                              ? "🔔 Active"
+                              : "🔔 Remind"}
+                          </span>
+                          <span className="sm:hidden">🔔</span>
+                        </button>
+                        <button
                           onClick={() =>
                             updateStatus(transaction._id, "cancelled")
                           }
@@ -381,6 +486,17 @@ const P2PDashboard = () => {
         isOpen={showForm}
         onClose={() => setShowForm(false)}
         onSuccess={() => fetchData()}
+      />
+
+      {/* P2P Reminder Modal */}
+      <P2PReminderModal
+        isOpen={showReminderModal}
+        onClose={() => {
+          setShowReminderModal(false);
+          setSelectedTransaction(null);
+        }}
+        transaction={selectedTransaction}
+        onSetReminder={handleSetReminder}
       />
     </div>
   );
