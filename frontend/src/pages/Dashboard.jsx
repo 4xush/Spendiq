@@ -161,46 +161,46 @@ function Dashboard() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="card">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white rounded-lg border p-4 hover:shadow-md transition-shadow">
           <div className="flex items-center">
             <div className="p-2 bg-green-100 rounded-lg">
-              <TrendingUp className="h-6 w-6 text-green-600" />
+              <TrendingUp className="h-5 w-5 text-green-600" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Income</p>
-              <p className="text-2xl font-bold text-gray-900">
+            <div className="ml-3">
+              <p className="text-xs font-medium text-gray-600">Total Income</p>
+              <p className="text-lg font-bold text-gray-900">
                 {formatCurrency(summary?.totalIncome || 0)}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="card">
+        <div className="bg-white rounded-lg border p-4 hover:shadow-md transition-shadow">
           <div className="flex items-center">
             <div className="p-2 bg-red-100 rounded-lg">
-              <TrendingDown className="h-6 w-6 text-red-600" />
+              <TrendingDown className="h-5 w-5 text-red-600" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">
+            <div className="ml-3">
+              <p className="text-xs font-medium text-gray-600">
                 Total Expenses
               </p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-lg font-bold text-gray-900">
                 {formatCurrency(summary?.totalExpenses || 0)}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="card">
+        <div className="bg-white rounded-lg border p-4 hover:shadow-md transition-shadow">
           <div className="flex items-center">
             <div className="p-2 bg-blue-100 rounded-lg">
-              <IndianRupee className="h-6 w-6 text-blue-600" />
+              <IndianRupee className="h-5 w-5 text-blue-600" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Net Amount</p>
+            <div className="ml-3">
+              <p className="text-xs font-medium text-gray-600">Net Amount</p>
               <p
-                className={`text-2xl font-bold ${
+                className={`text-lg font-bold ${
                   (summary?.netAmount || 0) >= 0
                     ? "text-green-600"
                     : "text-red-600"
@@ -212,14 +212,14 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="card">
+        <div className="bg-white rounded-lg border p-4 hover:shadow-md transition-shadow">
           <div className="flex items-center">
             <div className="p-2 bg-purple-100 rounded-lg">
-              <Receipt className="h-6 w-6 text-purple-600" />
+              <Receipt className="h-5 w-5 text-purple-600" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Transactions</p>
-              <p className="text-2xl font-bold text-gray-900">
+            <div className="ml-3">
+              <p className="text-xs font-medium text-gray-600">Transactions</p>
+              <p className="text-lg font-bold text-gray-900">
                 {summary?.totalTransactions || 0}
               </p>
             </div>
@@ -418,23 +418,6 @@ function Dashboard() {
           </div>
         </div>
       )}
-
-      <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(-5px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .animate-fadeIn {
-          animation: fadeIn 0.2s ease-out;
-        }
-      `}</style>
     </div>
   );
 }

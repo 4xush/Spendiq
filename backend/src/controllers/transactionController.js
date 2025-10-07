@@ -486,3 +486,24 @@ export const updateP2PStatus = async (req, res) => {
         })
     }
 }
+
+// Get all unique categories for user
+export const getCategories = async (req, res) => {
+    try {
+        const userId = req.user._id
+
+        const categories = await Transaction.distinct('category', {
+            userId,
+            category: { $ne: null, $ne: '' }
+        })
+
+        res.json({
+            categories: categories.sort()
+        })
+    } catch (error) {
+        console.error('Get categories error:', error)
+        res.status(500).json({
+            error: 'Failed to fetch categories'
+        })
+    }
+}

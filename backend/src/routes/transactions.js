@@ -10,7 +10,8 @@ import {
     createP2PTransaction,
     getP2PTransactions,
     updateP2PStatus,
-    getP2PSummary
+    getP2PSummary,
+    getCategories
 } from '../controllers/transactionController.js'
 import auth from '../middleware/auth.js'
 
@@ -18,6 +19,9 @@ const router = express.Router()
 
 // All transaction routes require authentication
 router.use(auth)
+
+// Categories route (must come before parameterized routes)
+router.get('/categories', getCategories)
 
 // P2P Transaction routes (must come before parameterized routes)
 router.post('/p2p', createP2PTransaction)
