@@ -76,8 +76,25 @@ class GeminiService {
         } catch (error) {
             console.error('❌ Gemini API error:', error.message)
             console.error('🔍 Full error details:', error)
-            throw new Error('Failed to analyze receipt with AI')
+
+            // Handle specific error types
+            if (error.message && error.message.includes('503') && error.message.includes('overloaded')) {
+                throw new Error('AI service temporarily unavailable. Please try again in a few minutes.')
+            } else if (error.message && error.message.includes('429')) {
+                throw new Error('AI service rate limit exceeded. Please try again later.')
+            } else if (error.message && error.message.includes('quota')) {
+                throw new Error('AI service quota exceeded. Please contact support.')
+            } else {
+                throw new Error('Failed to analyze receipt with AI. Please try again.')
+            }
         }
+    }
+
+    // Enhanced receipt analysis with retry logic
+    async analyzeReceiptWithRetry(imageBuffer) {
+        return this.retryWithBackoff(async () => {
+            return this.analyzeReceipt(imageBuffer)
+        }, 3, 2000)
     }
 
     // Categorize transaction based on description
@@ -208,8 +225,65 @@ class GeminiService {
             }
         } catch (error) {
             console.error('Gemini bank statement error:', error)
-            throw new Error('Failed to analyze bank statement with AI')
+
+            // Handle specific error types
+            if (error.message && error.message.includes('503') && error.message.includes('overloaded')) {
+                throw new Error('AI service temporarily unavailable. Please try again in a few minutes.')
+            } else if (error.message && error.message.includes('429')) {
+                throw new Error('AI service rate limit exceeded. Please try again later.')
+            } else if (error.message && error.message.includes('quota')) {
+                throw new Error('AI service quota exceeded. Please contact support.')
+            } else {
+                throw new Error('Failed to analyze bank statement with AI. Please try again.')
+            }
         }
+    }
+
+    // Helper method to retry with exponential backoff
+    async retryWithBackoff(operation, maxRetries = 3, baseDelay = 1000) {
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                return await operation()
+            } catch (error) {
+                // Don't retry for certain errors
+                if (error.message && (
+                    error.message.includes('quota') ||
+                    error.message.includes('authentication') ||
+                    error.message.includes('permission')
+                )) {
+                    throw error
+                }
+
+                // If this is the last attempt, throw the error
+                if (attempt === maxRetries) {
+                    throw error
+                }
+
+                // Check if it's a retryable error (503, 429, network issues)
+                const isRetryable = error.message && (
+                    error.message.includes('503') ||
+                    error.message.includes('429') ||
+                    error.message.includes('overloaded') ||
+                    error.message.includes('network') ||
+                    error.message.includes('timeout')
+                )
+
+                if (isRetryable) {
+                    const delay = baseDelay * Math.pow(2, attempt - 1) + Math.random() * 1000
+                    console.log(`🔄 Retry attempt ${attempt}/${maxRetries} after ${delay}ms delay due to: ${error.message}`)
+                    await new Promise(resolve => setTimeout(resolve, delay))
+                } else {
+                    throw error
+                }
+            }
+        }
+    }
+
+    // Enhanced bank statement analysis with retry logic
+    async analyzeBankStatementWithRetry(pdfText) {
+        return this.retryWithBackoff(async () => {
+            return this.analyzeBankStatement(pdfText)
+        }, 3, 2000)
     }
 }
 

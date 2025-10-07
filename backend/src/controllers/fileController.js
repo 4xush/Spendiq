@@ -85,8 +85,8 @@ async function processReceiptAsync(receiptId, filePath, userId) {
 
             console.log(`📝 OCR extracted ${cleanText.length} characters`)
 
-            // Analyze with Gemini AI
-            const extractedData = await getGeminiService().analyzeReceipt(cleanText)
+            // Analyze with Gemini AI using retry logic
+            const extractedData = await getGeminiService().analyzeReceiptWithRetry(cleanText)
 
             console.log(`🤖 Gemini analysis completed with confidence: ${extractedData.confidence}`)
 
@@ -246,42 +246,19 @@ export const processPDF = async (req, res) => {
             console.log('⚠️ Warning: Very little text extracted from PDF')
         }
 
-        // Parse transactions using AI
+        // Parse transactions using AI with retry logic
         console.log('🤖 Analyzing bank statement with AI...')
-        const extractedTransactions = await getGeminiService().analyzeBankStatement(pdfData.text)
-
-        // Create transactions
-        const createdTransactions = []
-        for (const transactionData of extractedTransactions) {
-            try {
-                const transaction = new Transaction({
-                    userId,
-                    type: transactionData.type,
-                    amount: transactionData.amount,
-                    category: transactionData.category || 'Other',
-                    description: transactionData.description,
-                    date: new Date(transactionData.date),
-                    source: 'pdf',
-                    metadata: {
-                        confidence: 0.8, // PDF parsing usually more reliable
-                        originalText: transactionData.description
-                    }
-                })
-
-                await transaction.save()
-                createdTransactions.push(transaction)
-            } catch (error) {
-                console.error('Failed to create transaction:', error)
-            }
-        }
+        const extractedTransactions = await getGeminiService().analyzeBankStatementWithRetry(pdfData.text)
 
         // Clean up uploaded file
         fs.unlinkSync(file.path)
 
+        console.log(`✅ PDF analysis complete. Found ${extractedTransactions.length} transactions`)
+
         res.json({
-            message: `Successfully processed PDF and created ${createdTransactions.length} transactions`,
-            transactionsCreated: createdTransactions.length,
-            transactions: createdTransactions
+            message: `Successfully processed PDF and found ${extractedTransactions.length} transactions`,
+            transactionsCreated: 0, // Not creating transactions automatically anymore
+            extractedData: extractedTransactions
         })
 
     } catch (error) {
@@ -296,8 +273,20 @@ export const processPDF = async (req, res) => {
             }
         }
 
+        // Provide more specific error messages based on error type
+        let errorMessage = 'Failed to process PDF'
+        if (error.message.includes('temporarily unavailable')) {
+            errorMessage = error.message
+        } else if (error.message.includes('rate limit')) {
+            errorMessage = error.message
+        } else if (error.message.includes('quota exceeded')) {
+            errorMessage = error.message
+        } else if (error.message.includes('try again')) {
+            errorMessage = error.message
+        }
+
         res.status(500).json({
-            error: 'Failed to process PDF'
+            error: errorMessage
         })
     }
 }
@@ -340,42 +329,19 @@ export const processImage = async (req, res) => {
             console.log('⚠️ Warning: Very little text extracted from image')
         }
 
-        // Parse transactions using AI
+        // Parse transactions using AI with retry logic
         console.log('🤖 Analyzing bank statement image with AI...')
-        const extractedTransactions = await getGeminiService().analyzeBankStatement(extractedText)
-
-        // Create transactions
-        const createdTransactions = []
-        for (const transactionData of extractedTransactions) {
-            try {
-                const transaction = new Transaction({
-                    userId,
-                    type: transactionData.type,
-                    amount: transactionData.amount,
-                    category: transactionData.category || 'Other',
-                    description: transactionData.description,
-                    date: new Date(transactionData.date),
-                    source: 'image',
-                    metadata: {
-                        confidence: 0.7, // Image OCR usually less reliable than PDF
-                        originalText: transactionData.description
-                    }
-                })
-
-                await transaction.save()
-                createdTransactions.push(transaction)
-            } catch (error) {
-                console.error('Failed to create transaction:', error)
-            }
-        }
+        const extractedTransactions = await getGeminiService().analyzeBankStatementWithRetry(extractedText)
 
         // Clean up uploaded file
         fs.unlinkSync(file.path)
 
+        console.log(`✅ Image analysis complete. Found ${extractedTransactions.length} transactions`)
+
         res.json({
-            message: `Successfully processed image and created ${createdTransactions.length} transactions`,
-            transactionsCreated: createdTransactions.length,
-            transactions: createdTransactions
+            message: `Successfully processed image and found ${extractedTransactions.length} transactions`,
+            transactionsCreated: 0, // Not creating transactions automatically anymore
+            extractedData: extractedTransactions
         })
 
     } catch (error) {
@@ -390,8 +356,20 @@ export const processImage = async (req, res) => {
             }
         }
 
+        // Provide more specific error messages based on error type
+        let errorMessage = 'Failed to process image'
+        if (error.message.includes('temporarily unavailable')) {
+            errorMessage = error.message
+        } else if (error.message.includes('rate limit')) {
+            errorMessage = error.message
+        } else if (error.message.includes('quota exceeded')) {
+            errorMessage = error.message
+        } else if (error.message.includes('try again')) {
+            errorMessage = error.message
+        }
+
         res.status(500).json({
-            error: 'Failed to process image'
+            error: errorMessage
         })
     }
 }
