@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./context/AuthContext";
 import Layout from "./components/Layout";
-import Dashboard from "./pages/Dashboard";
+import Dashboard from "./pages/Dashboard_Responsive";
 import Transactions from "./pages/Transactions";
 import Analytics from "./pages/Analytics";
 import Upload from "./pages/Upload";
