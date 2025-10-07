@@ -143,6 +143,15 @@ class GeminiService {
     // Analyze PDF bank statement and extract transactions
     async analyzeBankStatement(pdfText) {
         try {
+            // Check if we have meaningful text to analyze
+            const cleanText = pdfText.trim()
+            if (cleanText.length < 10) {
+                console.log('⚠️ Warning: Very little text provided to AI for analysis')
+                return []
+            }
+
+            console.log(`🤖 Analyzing ${cleanText.length} characters of bank statement text`)
+
             const prompt = `
         Analyze this bank statement text and extract all transactions.
         Return a JSON array of transactions with this structure:
@@ -160,6 +169,13 @@ class GeminiService {
         Income: Salary, Business, Investment, Gift, Other Income
         Expense: Food & Dining, Groceries, Transportation, Shopping, Entertainment, Bills & Utilities, Healthcare, Travel, Gas, Other
 
+        Important instructions:
+        - Look for patterns like dates, amounts, and transaction descriptions
+        - Identify debit/credit columns or negative/positive amounts
+        - Convert amounts to positive numbers and use "type" to indicate income/expense
+        - Be thorough in finding all transactions, even if formatting is inconsistent
+        - If text quality is poor from OCR, make best effort to interpret
+
         Bank statement text:
         ${pdfText}
 
@@ -171,10 +187,23 @@ class GeminiService {
             const text = response.text()
 
             try {
-                const transactions = JSON.parse(text)
+                // Extract JSON from markdown code blocks if present
+                let jsonText = text.trim();
+
+                // Remove markdown code blocks if they exist
+                if (jsonText.startsWith('```json') && jsonText.endsWith('```')) {
+                    jsonText = jsonText.slice(7, -3).trim(); // Remove ```json and ```
+                } else if (jsonText.startsWith('```') && jsonText.endsWith('```')) {
+                    jsonText = jsonText.slice(3, -3).trim(); // Remove generic ```
+                }
+
+                console.log('Extracted JSON text:', jsonText);
+
+                const transactions = JSON.parse(jsonText)
                 return Array.isArray(transactions) ? transactions : []
             } catch (parseError) {
                 console.error('Failed to parse bank statement:', parseError)
+                console.error('Raw response text:', text)
                 return []
             }
         } catch (error) {

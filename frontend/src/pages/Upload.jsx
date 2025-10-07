@@ -8,6 +8,7 @@ import {
   Clock,
   Eye,
   ArrowRight,
+  TrendingUp,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -168,27 +169,96 @@ function Upload() {
         },
       });
 
-      toast.success(
-        `${type === "receipt" ? "Receipt" : "PDF"} uploaded successfully!`
-      );
+      if (type === "pdf") {
+        // PDF processing is synchronous - handle response immediately
+        console.log("📄 PDF Response received:", response.data);
 
-      // Add to results
-      setUploadResults((prev) => [
-        ...prev,
-        {
-          id: response.data.receiptId || Date.now(),
-          receiptId: response.data.receiptId, // Store the actual receipt ID for polling
-          filename: file.name,
-          type,
-          status: "processing",
-          timestamp: new Date(),
-        },
-      ]);
+        const { transactionsCreated, message } = response.data;
+        console.log("📊 Transactions created:", transactionsCreated);
+
+        if (transactionsCreated && transactionsCreated > 0) {
+          toast.success(
+            `🎉 PDF processed successfully! Created ${transactionsCreated} transactions.`
+          );
+
+          // Add successful result
+          setUploadResults((prev) => [
+            ...prev,
+            {
+              id: Date.now(),
+              filename: file.name,
+              type,
+              status: "completed",
+              timestamp: new Date(),
+              transactionsCreated,
+              message,
+            },
+          ]);
+        } else {
+          // No transactions found
+          toast.warning(
+            "⚠️ PDF processed but no transactions were found. Please check if the PDF contains a valid bank statement."
+          );
+
+          setUploadResults((prev) => [
+            ...prev,
+            {
+              id: Date.now(),
+              filename: file.name,
+              type,
+              status: "completed",
+              timestamp: new Date(),
+              transactionsCreated: 0,
+              message: "No transactions found in PDF",
+            },
+          ]);
+        }
+      } else {
+        // Receipt processing is asynchronous - show processing status
+        toast.success("Receipt uploaded successfully!");
+
+        setUploadResults((prev) => [
+          ...prev,
+          {
+            id: response.data.receiptId || Date.now(),
+            receiptId: response.data.receiptId,
+            filename: file.name,
+            type,
+            status: "processing",
+            timestamp: new Date(),
+          },
+        ]);
+      }
     } catch (error) {
       console.error("Upload error:", error);
       const errorMessage =
         error.response?.data?.error || `Failed to upload ${type}`;
-      toast.error(errorMessage);
+
+      // Show specific error message for PDF processing failures
+      if (type === "pdf") {
+        if (error.response?.status === 500) {
+          toast.error(
+            "❌ Failed to process PDF. The file may be corrupted, password-protected, or contain unreadable text. Please try a different PDF or contact support."
+          );
+        } else {
+          toast.error(`❌ PDF Processing Error: ${errorMessage}`);
+        }
+
+        // Add failed result for PDF
+        setUploadResults((prev) => [
+          ...prev,
+          {
+            id: Date.now(),
+            filename: file.name,
+            type,
+            status: "failed",
+            timestamp: new Date(),
+            error: errorMessage,
+          },
+        ]);
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setUploading(false);
     }
@@ -509,14 +579,69 @@ function Upload() {
                       </div>
                     )}
 
+                    {/* Show PDF processing results */}
+                    {result.type === "pdf" && result.status === "completed" && (
+                      <div className="mt-4 p-3 bg-white rounded-lg border border-blue-200">
+                        <h4 className="font-medium text-blue-800 mb-2">
+                          📊 PDF Processing Results:
+                        </h4>
+                        <div className="text-sm">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium text-gray-700">
+                              Transactions Created:
+                            </span>
+                            <span className="ml-2 text-blue-600 font-semibold">
+                              {result.transactionsCreated || 0}
+                            </span>
+                          </div>
+                          {result.message && (
+                            <div className="text-gray-600 text-xs">
+                              {result.message}
+                            </div>
+                          )}
+                        </div>
+
+                        {result.transactionsCreated > 0 && (
+                          <div className="mt-3 flex space-x-2">
+                            <button
+                              onClick={() => navigate("/transactions")}
+                              className="flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded-md text-sm font-medium hover:bg-blue-200 transition-colors"
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              View Transactions
+                            </button>
+                            <button
+                              onClick={() => navigate("/analytics")}
+                              className="flex items-center px-3 py-1 bg-green-100 text-green-700 rounded-md text-sm font-medium hover:bg-green-200 transition-colors"
+                            >
+                              <TrendingUp className="h-4 w-4 mr-1" />
+                              View Analytics
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* Show error for failed receipts */}
                     {result.status === "failed" && (
                       <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-200">
-                        <p className="text-red-800 text-sm">
+                        <p className="text-red-800 text-sm font-medium mb-1">
                           ❌{" "}
-                          {result.error?.message ||
+                          {result.type === "pdf"
+                            ? "PDF Processing Failed"
+                            : "Receipt Processing Failed"}
+                        </p>
+                        <p className="text-red-700 text-sm">
+                          {result.error ||
                             "Processing failed. Please try uploading again."}
                         </p>
+                        {result.type === "pdf" && (
+                          <div className="mt-2 text-xs text-red-600">
+                            💡 Tips: Ensure your PDF contains selectable text or
+                            clear scanned images. Password-protected PDFs are
+                            not supported.
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

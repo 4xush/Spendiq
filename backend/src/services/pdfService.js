@@ -1,35 +1,186 @@
-// import pdf from 'pdf-parse'
+import { createRequire } from 'module'
 import fs from 'fs'
+import path from 'path'
+import { pdfToPng } from 'pdf-to-png-converter'
+import Tesseract from 'tesseract.js'
+
+const require = createRequire(import.meta.url)
+const pdfParse = require('pdf-parse')
 
 class PDFService {
-    // Extract text from PDF file - using simplified approach for now
+    // Extract text from PDF file with OCR fallback
     async extractTextFromPDF(pdfPath) {
         try {
-            // For now, we'll return a placeholder response
-            // In production, you would use a proper PDF parsing library
-            return {
-                text: "This is a placeholder for PDF text extraction. Please implement with a stable PDF library.",
-                pages: 1,
-                info: {}
+            console.log('📄 Starting PDF text extraction...')
+            console.log('🔧 Starting PDF text extraction for:', path.basename(pdfPath))
+
+            // First, try to extract text directly from PDF
+            const pdfBuffer = fs.readFileSync(pdfPath)
+            let pdfData
+
+            try {
+                pdfData = await pdfParse(pdfBuffer)
+            } catch (parseError) {
+                console.log('⚠️ Direct PDF parsing failed, falling back to OCR immediately')
+                return await this.extractTextWithOCR(pdfPath)
             }
+
+            console.log('📄 PDF Info:', {
+                pages: pdfData.numpages,
+                textLength: pdfData.text.length
+            })
+
+            // Check if we got meaningful text (more than just whitespace and minimal content)
+            const cleanText = pdfData.text.trim().replace(/\s+/g, ' ')
+            const hasSelectableText = cleanText.length > 50 && /[a-zA-Z0-9]/.test(cleanText)
+
+            if (hasSelectableText) {
+                console.log('✅ Successfully extracted selectable text from PDF')
+                return {
+                    text: pdfData.text,
+                    pages: pdfData.numpages,
+                    info: pdfData.info || {},
+                    extractionMethod: 'direct'
+                }
+            }
+
+            console.log('⚠️ PDF appears to be scanned or has minimal text. Falling back to OCR...')
+
+            // Fallback to OCR if text extraction failed or returned minimal content
+            const ocrText = await this.extractTextWithOCR(pdfPath)
+
+            return {
+                text: ocrText,
+                pages: pdfData.numpages || 1,
+                info: pdfData.info || {},
+                extractionMethod: 'ocr'
+            }
+
         } catch (error) {
-            console.error('PDF extraction error:', error)
-            throw new Error('Failed to extract text from PDF')
+            console.error('❌ PDF extraction error:', error)
+
+            // If direct extraction failed, try OCR as last resort
+            try {
+                console.log('🔄 Direct extraction failed, attempting OCR fallback...')
+                const ocrText = await this.extractTextWithOCR(pdfPath)
+                return {
+                    text: ocrText,
+                    pages: 1,
+                    info: {},
+                    extractionMethod: 'ocr-fallback'
+                }
+            } catch (ocrError) {
+                console.error('❌ OCR fallback also failed:', ocrError)
+                throw new Error('Failed to extract text from PDF using both direct extraction and OCR')
+            }
+        }
+    }
+
+    // Extract text using OCR (for scanned PDFs) - PURE JAVASCRIPT, NO SYSTEM DEPENDENCIES
+    async extractTextWithOCR(pdfPath) {
+        const tempImagePaths = []
+
+        try {
+            console.log('🔍 Converting PDF pages to images for OCR...')
+
+            // Convert PDF to PNG images using pdf-to-png-converter (pure JS, no system deps)
+            const pngPages = await pdfToPng(pdfPath, {
+                disableFontFace: false,
+                useSystemFonts: false,
+                viewportScale: 2.0, // Higher scale = better quality
+                outputFolder: path.dirname(pdfPath),
+                outputFileMask: `page`,
+                strictPagesToProcess: false,
+                verbosityLevel: 0
+            })
+
+            console.log(`📸 Converted ${pngPages.length} pages to images`)
+
+            let combinedText = ''
+
+            // Process each page with Tesseract.js OCR (pure JavaScript)
+            for (let i = 0; i < pngPages.length; i++) {
+                try {
+                    console.log(`🔍 Processing page ${i + 1}/${pngPages.length} with OCR...`)
+
+                    const page = pngPages[i]
+                    const imagePath = page.path
+
+                    // Save temporary image file
+                    if (!fs.existsSync(imagePath)) {
+                        fs.writeFileSync(imagePath, page.content)
+                    }
+                    tempImagePaths.push(imagePath)
+
+                    // Perform OCR using Tesseract.js
+                    const { data: { text } } = await Tesseract.recognize(
+                        imagePath,
+                        'eng', // Language
+                        {
+                            logger: info => {
+                                if (info.status === 'recognizing text') {
+                                    console.log(`   Progress: ${Math.round(info.progress * 100)}%`)
+                                }
+                            }
+                        }
+                    )
+
+                    combinedText += `\n--- Page ${i + 1} ---\n${text}\n`
+                    console.log(`✅ Page ${i + 1} OCR completed (${text.length} chars)`)
+
+                } catch (pageError) {
+                    console.error(`❌ Failed to process page ${i + 1}:`, pageError.message)
+                    // Continue with next page
+                }
+            }
+
+            // Clean up temporary files
+            this.cleanupTempFiles(tempImagePaths)
+
+            if (!combinedText.trim()) {
+                throw new Error('No text could be extracted from any page')
+            }
+
+            console.log(`✅ OCR completed. Extracted ${combinedText.length} characters from ${pngPages.length} pages`)
+            return combinedText.trim()
+
+        } catch (error) {
+            // Ensure cleanup even on error
+            this.cleanupTempFiles(tempImagePaths)
+            console.error('❌ OCR extraction error:', error)
+            throw new Error('Failed to extract text using OCR: ' + error.message)
+        }
+    }
+
+    // Clean up temporary image files
+    cleanupTempFiles(filePaths) {
+        for (const filePath of filePaths) {
+            try {
+                if (fs.existsSync(filePath)) {
+                    fs.unlinkSync(filePath)
+                    console.log(`🗑️ Cleaned up: ${path.basename(filePath)}`)
+                }
+            } catch (error) {
+                console.error(`⚠️ Failed to cleanup ${filePath}:`, error.message)
+            }
         }
     }
 
     // Parse bank statement patterns
-    parsebankStatement(pdfText) {
+    parseBankStatement(pdfText) {
         const lines = pdfText.split('\n').map(line => line.trim()).filter(line => line.length > 0)
 
         const transactionPatterns = [
-            // Common bank statement patterns
-            /(\d{1,2}\/\d{1,2}\/\d{2,4})\s+(.+?)\s+(-?\$?\d+\.?\d*)/g,
-            /(\d{1,2}-\d{1,2}-\d{2,4})\s+(.+?)\s+(-?\$?\d+\.?\d*)/g,
-            /(\d{4}-\d{2}-\d{2})\s+(.+?)\s+(-?\$?\d+\.?\d*)/g
+            // Common bank statement patterns (supports $, ₹, €, £)
+            /(\d{1,2}\/\d{1,2}\/\d{2,4})\s+(.+?)\s+(-?[$₹€£]?\s?\d+[,.]?\d*)/g,
+            /(\d{1,2}-\d{1,2}-\d{2,4})\s+(.+?)\s+(-?[$₹€£]?\s?\d+[,.]?\d*)/g,
+            /(\d{4}-\d{2}-\d{2})\s+(.+?)\s+(-?[$₹€£]?\s?\d+[,.]?\d*)/g,
+            // Indian date format DD/MM/YYYY
+            /(\d{1,2}\/\d{1,2}\/\d{4})\s+(.+?)\s+([\d,]+\.?\d*)\s*(?:Dr|Cr)?/gi
         ]
 
         const transactions = []
+        const seenTransactions = new Set()
 
         for (const pattern of transactionPatterns) {
             let match
@@ -37,10 +188,14 @@ class PDFService {
                 const [, date, description, amount] = match
 
                 // Clean up the data
-                const cleanAmount = parseFloat(amount.replace(/[$,]/g, ''))
+                const cleanAmount = parseFloat(amount.replace(/[$,₹€£\s]/g, ''))
                 const cleanDescription = description.trim()
 
-                if (!isNaN(cleanAmount) && cleanDescription.length > 0) {
+                // Create unique key to avoid duplicates
+                const transactionKey = `${date}-${cleanDescription}-${cleanAmount}`
+
+                if (!isNaN(cleanAmount) && cleanDescription.length > 0 && !seenTransactions.has(transactionKey)) {
+                    seenTransactions.add(transactionKey)
                     transactions.push({
                         date: this.parseDate(date),
                         description: cleanDescription,
@@ -58,22 +213,24 @@ class PDFService {
     parseDate(dateString) {
         // Try different date formats
         const formats = [
-            /(\d{1,2})\/(\d{1,2})\/(\d{2,4})/, // MM/DD/YYYY or MM/DD/YY
-            /(\d{1,2})-(\d{1,2})-(\d{2,4})/, // MM-DD-YYYY or MM-DD-YY
+            /(\d{1,2})\/(\d{1,2})\/(\d{2,4})/, // MM/DD/YYYY or DD/MM/YYYY
+            /(\d{1,2})-(\d{1,2})-(\d{2,4})/, // MM-DD-YYYY or DD-MM-YYYY
             /(\d{4})-(\d{2})-(\d{2})/ // YYYY-MM-DD
         ]
 
-        for (const format of formats) {
+        for (let i = 0; i < formats.length; i++) {
+            const format = formats[i]
             const match = dateString.match(format)
             if (match) {
                 let [, part1, part2, part3] = match
 
                 // Handle different formats
-                if (format === formats[2]) { // YYYY-MM-DD
+                if (i === 2) { // YYYY-MM-DD
                     return `${part1}-${part2.padStart(2, '0')}-${part3.padStart(2, '0')}`
-                } else { // MM/DD/YYYY or MM-DD-YYYY
+                } else { // DD/MM/YYYY or MM-DD-YYYY
                     const year = part3.length === 2 ? `20${part3}` : part3
-                    return `${year}-${part1.padStart(2, '0')}-${part2.padStart(2, '0')}`
+                    // Assume DD/MM/YYYY for Indian format
+                    return `${year}-${part2.padStart(2, '0')}-${part1.padStart(2, '0')}`
                 }
             }
         }
@@ -93,14 +250,20 @@ class PDFService {
             // Detect table headers
             if (line.toLowerCase().includes('date') &&
                 line.toLowerCase().includes('description') &&
-                (line.toLowerCase().includes('amount') || line.toLowerCase().includes('debit') || line.toLowerCase().includes('credit'))) {
+                (line.toLowerCase().includes('amount') ||
+                    line.toLowerCase().includes('debit') ||
+                    line.toLowerCase().includes('credit') ||
+                    line.toLowerCase().includes('withdrawal') ||
+                    line.toLowerCase().includes('deposit'))) {
                 inTable = true
                 currentTable = []
                 continue
             }
 
             // Detect end of table
-            if (inTable && (line.includes('Total') || line.includes('Balance') || line.trim() === '')) {
+            if (inTable && (line.toLowerCase().includes('total') ||
+                line.toLowerCase().includes('balance') ||
+                line.trim() === '')) {
                 if (currentTable.length > 0) {
                     tables.push(currentTable)
                     currentTable = []

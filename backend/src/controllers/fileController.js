@@ -220,6 +220,8 @@ export const processPDF = async (req, res) => {
         const userId = req.user._id
         const file = req.file
 
+        console.log(`🔍 Validating file: ${file.originalname} (${file.mimetype})`)
+
         // Validate PDF file
         if (file.mimetype !== 'application/pdf') {
             fs.unlinkSync(file.path) // Clean up
@@ -228,10 +230,24 @@ export const processPDF = async (req, res) => {
             })
         }
 
+        console.log('✅ File validation passed')
+
         // Extract text from PDF
+        console.log('📄 Starting PDF text extraction...')
         const pdfData = await pdfService.extractTextFromPDF(file.path)
 
+        console.log(`📊 Extraction complete:`, {
+            method: pdfData.extractionMethod,
+            textLength: pdfData.text.length,
+            pages: pdfData.pages
+        })
+
+        if (!pdfData.text || pdfData.text.trim().length < 10) {
+            console.log('⚠️ Warning: Very little text extracted from PDF')
+        }
+
         // Parse transactions using AI
+        console.log('🤖 Analyzing bank statement with AI...')
         const extractedTransactions = await getGeminiService().analyzeBankStatement(pdfData.text)
 
         // Create transactions

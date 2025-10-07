@@ -23,9 +23,10 @@
     "mongoose": "^7.5.0",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
-    "pdf2pic": "^3.2.0",
-    "pdfjs-dist": "^5.4.296",
-    "tesseract.js": "^5.0.3"
+    "pdf-parse": "^2.2.1",
+    "pdf-to-png-converter": "^3.10.0",
+    "sharp": "^0.34.4",
+    "tesseract.js": "^5.1.1"
   },
   "devDependencies": {
     "jest": "^29.7.0",
