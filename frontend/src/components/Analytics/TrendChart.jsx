@@ -11,11 +11,11 @@ import {
   Area,
   AreaChart,
 } from "recharts";
-import { TrendingUp, TrendingDown, BarChart3 } from "lucide-react";
+import { TrendingUp, TrendingDown, BarChart3, ChevronDown } from "lucide-react";
 
 const TrendChart = ({ trendData, formatCurrency, loading = false }) => {
-  const [chartType, setChartType] = useState("area"); // line or area
-  const [dayFilter, setDayFilter] = useState(30); // Default to 30 days
+  const [chartType, setChartType] = useState("area");
+  const [dayFilter, setDayFilter] = useState(30);
   const [visibleLines, setVisibleLines] = useState({
     income: true,
     expenses: true,
@@ -40,24 +40,24 @@ const TrendChart = ({ trendData, formatCurrency, loading = false }) => {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg border p-6">
-        <div className="h-6 bg-gray-200 rounded mb-4 w-48 animate-pulse"></div>
-        <div className="h-80 bg-gray-100 rounded animate-pulse"></div>
+      <div className="p-4 sm:p-6">
+        <div className="h-4 bg-gray-200 rounded mb-4 w-32 animate-pulse"></div>
+        <div className="h-64 sm:h-80 bg-gray-100 rounded animate-pulse"></div>
       </div>
     );
   }
 
   if (!trendData || trendData.length === 0) {
     return (
-      <div className="bg-white rounded-lg border p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Income vs Expenses Trend
+      <div className="p-4 sm:p-6">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
+          Trend Analysis
         </h3>
-        <div className="flex items-center justify-center h-80 text-gray-500">
+        <div className="flex items-center justify-center h-64 text-gray-500">
           <div className="text-center">
-            <div className="text-4xl mb-2">📈</div>
-            <p>No trend data available</p>
-            <p className="text-sm">Add transactions over time to see trends</p>
+            <div className="text-3xl mb-2">📈</div>
+            <p className="text-sm">No trend data available</p>
+            <p className="text-xs text-gray-400">Add transactions to see trends</p>
           </div>
         </div>
       </div>
@@ -66,51 +66,29 @@ const TrendChart = ({ trendData, formatCurrency, loading = false }) => {
 
   if (filteredData.length === 0) {
     return (
-      <div className="bg-white rounded-lg border p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-gray-900">
-            Income vs Expenses Trend
+      <div className="p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900">
+            Trend Analysis
           </h3>
-          <div className="flex items-center space-x-2">
-            <select
-              value={dayFilter}
-              onChange={(e) => setDayFilter(parseInt(e.target.value))}
-              className="px-3 py-1 border border-gray-300 rounded text-sm bg-white"
-            >
-              <option value={7}>Last 7 days</option>
-              <option value={14}>Last 14 days</option>
-              <option value={30}>Last 30 days</option>
-              <option value={60}>Last 60 days</option>
-              <option value={90}>Last 90 days</option>
-              <option value={365}>Last year</option>
-            </select>
-            <button
-              onClick={() => setChartType("line")}
-              className={`px-3 py-1 rounded text-sm ${
-                chartType === "line"
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              Line
-            </button>
-            <button
-              onClick={() => setChartType("area")}
-              className={`px-3 py-1 rounded text-sm ${
-                chartType === "area"
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              Area
-            </button>
-          </div>
+          <select
+            value={dayFilter}
+            onChange={(e) => setDayFilter(parseInt(e.target.value))}
+            className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-auto"
+          >
+            <option value={7}>Last 7 days</option>
+            <option value={14}>Last 14 days</option>
+            <option value={30}>Last 30 days</option>
+            <option value={60}>Last 60 days</option>
+            <option value={90}>Last 90 days</option>
+            <option value={365}>Last year</option>
+          </select>
         </div>
-        <div className="flex items-center justify-center h-80 text-gray-500">
+        <div className="flex items-center justify-center h-64 text-gray-500">
           <div className="text-center">
-            <div className="text-4xl mb-2">📈</div>
-            <p>No data for the last {dayFilter} days</p>
-            <p className="text-sm">Try selecting a different time period</p>
+            <div className="text-3xl mb-2">📈</div>
+            <p className="text-sm">No data for last {dayFilter} days</p>
+            <p className="text-xs text-gray-400">Try a different period</p>
           </div>
         </div>
       </div>
@@ -128,20 +106,17 @@ const TrendChart = ({ trendData, formatCurrency, loading = false }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white p-3 border rounded-lg shadow-lg">
-          <p className="font-medium mb-2">{formatDate(label)}</p>
+          <p className="font-medium text-sm mb-2">{formatDate(label)}</p>
           {payload.map((entry, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between space-x-4"
-            >
+            <div key={index} className="flex items-center justify-between gap-4">
               <div className="flex items-center">
                 <div
-                  className="w-3 h-3 rounded-full mr-2"
+                  className="w-2 h-2 rounded-full mr-2"
                   style={{ backgroundColor: entry.color }}
                 />
-                <span className="text-sm">{entry.name}:</span>
+                <span className="text-xs">{entry.name}:</span>
               </div>
-              <span className="font-medium">{formatCurrency(entry.value)}</span>
+              <span className="font-medium text-xs">{formatCurrency(entry.value)}</span>
             </div>
           ))}
         </div>
@@ -163,14 +138,8 @@ const TrendChart = ({ trendData, formatCurrency, loading = false }) => {
     netAmount: { color: "#3B82F6", name: "Net Amount", icon: BarChart3 },
   };
 
-  const totalIncome = filteredData.reduce(
-    (sum, item) => sum + (item.income || 0),
-    0
-  );
-  const totalExpenses = filteredData.reduce(
-    (sum, item) => sum + (item.expenses || 0),
-    0
-  );
+  const totalIncome = filteredData.reduce((sum, item) => sum + (item.income || 0), 0);
+  const totalExpenses = filteredData.reduce((sum, item) => sum + (item.expenses || 0), 0);
   const avgDaily = {
     income: totalIncome / filteredData.length,
     expenses: totalExpenses / filteredData.length,
@@ -178,72 +147,87 @@ const TrendChart = ({ trendData, formatCurrency, loading = false }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg border p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-gray-900">
-          Income vs Expenses Trend
+    <div className="p-4 sm:p-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900">
+          Trend Analysis
         </h3>
-        <div className="flex items-center space-x-2">
+
+        {/* Controls */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Period Selector */}
           <select
             value={dayFilter}
             onChange={(e) => setDayFilter(parseInt(e.target.value))}
-            className="px-3 py-1 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-3 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex-1 sm:flex-none"
           >
-            <option value={7}>Last 7 days</option>
-            <option value={14}>Last 14 days</option>
-            <option value={30}>Last 30 days</option>
-            <option value={60}>Last 60 days</option>
-            <option value={90}>Last 90 days</option>
-            <option value={365}>Last year</option>
+            <option value={7}>7d</option>
+            <option value={14}>14d</option>
+            <option value={30}>30d</option>
+            <option value={60}>60d</option>
+            <option value={90}>90d</option>
+            <option value={365}>1y</option>
           </select>
-          <div className="h-6 w-px bg-gray-300"></div>
-          <button
-            onClick={() => setChartType("line")}
-            className={`px-3 py-1 rounded text-sm transition-colors ${
-              chartType === "line"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            Line
-          </button>
-          <button
-            onClick={() => setChartType("area")}
-            className={`px-3 py-1 rounded text-sm transition-colors ${
-              chartType === "area"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            Area
-          </button>
+
+          {/* Chart Type Toggle */}
+          <div className="flex bg-gray-100 rounded-lg p-0.5">
+            <button
+              onClick={() => setChartType("line")}
+              className={`px-3 py-1.5 text-xs sm:text-sm rounded-md transition-all ${
+                chartType === "line"
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-gray-600"
+              }`}
+            >
+              Line
+            </button>
+            <button
+              onClick={() => setChartType("area")}
+              className={`px-3 py-1.5 text-xs sm:text-sm rounded-md transition-all ${
+                chartType === "area"
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-gray-600"
+              }`}
+            >
+              Area
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6">
         {Object.entries(lineConfig).map(([key, config]) => {
           const Icon = config.icon;
           return (
-            <div key={key} className="text-center p-3 bg-gray-50 rounded-lg">
+            <div
+              key={key}
+              className="text-center p-2 sm:p-3 bg-gray-50 rounded-lg"
+            >
               <div className="flex items-center justify-center mb-1">
                 <Icon
-                  className="h-4 w-4 mr-1"
+                  className="h-3 w-3 sm:h-4 sm:w-4"
                   style={{ color: config.color }}
                 />
-                <span className="text-sm font-medium">{config.name}</span>
               </div>
-              <p className="text-lg font-bold" style={{ color: config.color }}>
+              <p className="text-xs sm:text-sm font-medium text-gray-700 mb-0.5 truncate">
+                {config.name}
+              </p>
+              <p
+                className="text-sm sm:text-base font-bold truncate"
+                style={{ color: config.color }}
+              >
                 {formatCurrency(avgDaily[key])}
               </p>
-              <p className="text-xs text-gray-500">Daily Average</p>
+              <p className="text-[9px] sm:text-xs text-gray-500">avg/day</p>
             </div>
           );
         })}
       </div>
 
       {/* Chart */}
-      <div className="h-80">
+      <div className="h-64 sm:h-80">
         <ResponsiveContainer width="100%" height="100%">
           {chartType === "line" ? (
             <LineChart data={filteredData}>
@@ -251,14 +235,15 @@ const TrendChart = ({ trendData, formatCurrency, loading = false }) => {
               <XAxis
                 dataKey="date"
                 tickFormatter={formatDate}
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 10 }}
+                interval="preserveStartEnd"
               />
               <YAxis
-                tickFormatter={(value) => `₹${value}`}
-                tick={{ fontSize: 12 }}
+                tickFormatter={(value) => `₹${value >= 1000 ? (value / 1000).toFixed(0) + 'k' : value}`}
+                tick={{ fontSize: 10 }}
+                width={50}
               />
               <Tooltip content={customTooltip} />
-              <Legend />
               {Object.entries(lineConfig).map(([key, config]) =>
                 visibleLines[key] ? (
                   <Line
@@ -268,8 +253,8 @@ const TrendChart = ({ trendData, formatCurrency, loading = false }) => {
                     stroke={config.color}
                     strokeWidth={2}
                     name={config.name}
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
+                    dot={false}
+                    activeDot={{ r: 4 }}
                   />
                 ) : null
               )}
@@ -280,14 +265,15 @@ const TrendChart = ({ trendData, formatCurrency, loading = false }) => {
               <XAxis
                 dataKey="date"
                 tickFormatter={formatDate}
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 10 }}
+                interval="preserveStartEnd"
               />
               <YAxis
-                tickFormatter={(value) => `₹${value}`}
-                tick={{ fontSize: 12 }}
+                tickFormatter={(value) => `₹${value >= 1000 ? (value / 1000).toFixed(0) + 'k' : value}`}
+                tick={{ fontSize: 10 }}
+                width={50}
               />
               <Tooltip content={customTooltip} />
-              <Legend />
               {Object.entries(lineConfig).map(([key, config]) =>
                 visibleLines[key] ? (
                   <Area
@@ -308,19 +294,21 @@ const TrendChart = ({ trendData, formatCurrency, loading = false }) => {
       </div>
 
       {/* Legend with Toggle */}
-      <div className="flex items-center justify-center space-x-6 mt-4">
+      <div className="flex flex-wrap items-center justify-center gap-3 mt-4">
         {Object.entries(lineConfig).map(([key, config]) => {
           const Icon = config.icon;
           return (
             <button
               key={key}
               onClick={() => toggleLine(key)}
-              className={`flex items-center space-x-2 px-3 py-1 rounded transition-opacity ${
-                visibleLines[key] ? "opacity-100" : "opacity-50"
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all ${
+                visibleLines[key]
+                  ? "bg-gray-100 opacity-100"
+                  : "opacity-40 hover:opacity-60"
               }`}
             >
-              <Icon className="h-4 w-4" style={{ color: config.color }} />
-              <span className="text-sm font-medium">{config.name}</span>
+              <Icon className="h-3.5 w-3.5" style={{ color: config.color }} />
+              <span className="text-xs sm:text-sm font-medium">{config.name}</span>
             </button>
           );
         })}

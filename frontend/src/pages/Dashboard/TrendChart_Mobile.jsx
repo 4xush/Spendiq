@@ -6,7 +6,6 @@ import { Link } from "react-router-dom";
 const TrendChartMobile = ({ trendData, formatCurrency, formatDate }) => {
   const [viewMode, setViewMode] = useState("area");
 
-  console.log("📈 TrendChartMobile received data:", trendData);
 
   // Ensure we have valid data
   if (!trendData || !Array.isArray(trendData) || trendData.length === 0) {
@@ -55,7 +54,6 @@ const TrendChartMobile = ({ trendData, formatCurrency, formatDate }) => {
     };
   });
 
-  console.log("📊 Trend chart data processed:", chartData);
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {

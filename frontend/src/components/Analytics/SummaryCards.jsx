@@ -35,15 +35,13 @@ const SummaryCards = ({ summary, formatCurrency, loading = false }) => {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="bg-white rounded-lg border p-4 animate-pulse">
-            <div className="flex items-center">
-              <div className="p-2 bg-gray-200 rounded-lg w-10 h-10"></div>
-              <div className="ml-3 flex-1">
-                <div className="h-3 bg-gray-200 rounded mb-2"></div>
-                <div className="h-6 bg-gray-200 rounded"></div>
-              </div>
+          <div key={i} className="bg-white rounded-xl border p-3 sm:p-4 animate-pulse">
+            <div className="flex flex-col">
+              <div className="p-2 bg-gray-200 rounded-lg w-8 h-8 sm:w-10 sm:h-10 mb-2"></div>
+              <div className="h-2.5 bg-gray-200 rounded mb-2 w-3/4"></div>
+              <div className="h-5 bg-gray-200 rounded w-full"></div>
             </div>
           </div>
         ))}
@@ -52,7 +50,7 @@ const SummaryCards = ({ summary, formatCurrency, loading = false }) => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       {cards.map((card, index) => {
         const Icon = card.icon;
         const colorClasses = {
@@ -72,49 +70,41 @@ const SummaryCards = ({ summary, formatCurrency, loading = false }) => {
         return (
           <div
             key={index}
-            className="bg-white rounded-lg border p-4 hover:shadow-md transition-shadow"
+            className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 hover:shadow-lg transition-all active:scale-[0.98]"
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div className={`p-2 rounded-lg ${colorClasses[card.color]}`}>
-                  <Icon className="h-5 w-5" />
-                </div>
-                <div className="ml-3">
-                  <p className="text-xs font-medium text-gray-600">
-                    {card.title}
-                  </p>
-                  <p
-                    className={`text-lg font-bold ${
-                      textColorClasses[card.color]
-                    }`}
-                  >
-                    {card.isCount ? card.value : formatCurrency(card.value)}
-                  </p>
-                </div>
-              </div>
+            {/* Icon */}
+            <div className={`p-2 rounded-lg ${colorClasses[card.color]} inline-flex mb-2 sm:mb-3`}>
+              <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
+            </div>
 
-              {/* Change Indicator */}
-              {card.change !== undefined && card.change !== null && (
-                <div className="text-right">
-                  <div
-                    className={`text-xs font-medium ${
+            {/* Title */}
+            <p className="text-[10px] sm:text-xs font-medium text-gray-600 mb-1">
+              {card.title}
+            </p>
+
+            {/* Value */}
+            <p className={`text-base sm:text-xl font-bold ${textColorClasses[card.color]} truncate`}>
+              {card.isCount ? card.value.toLocaleString() : formatCurrency(card.value)}
+            </p>
+
+            {/* Change Indicator */}
+            {card.change !== undefined && card.change !== null && (
+              <div className="mt-2 sm:mt-3">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span
+                    className={`text-[10px] sm:text-xs font-semibold ${
                       card.change >= 0 ? "text-green-600" : "text-red-600"
                     }`}
                   >
-                    {card.change >= 0 ? "+" : ""}
-                    {card.change.toFixed(1)}%
-                  </div>
-                  <div className="text-xs text-gray-500">vs last period</div>
+                    {card.change >= 0 ? "↑" : "↓"} {Math.abs(card.change).toFixed(1)}%
+                  </span>
+                  <span className="text-[9px] sm:text-[10px] text-gray-500">vs last</span>
                 </div>
-              )}
-            </div>
 
-            {/* Mini trend indicator */}
-            {card.change !== undefined && card.change !== null && (
-              <div className="mt-3">
+                {/* Progress Bar */}
                 <div className="w-full bg-gray-200 rounded-full h-1">
                   <div
-                    className={`h-1 rounded-full ${
+                    className={`h-1 rounded-full transition-all ${
                       card.change >= 0 ? "bg-green-500" : "bg-red-500"
                     }`}
                     style={{

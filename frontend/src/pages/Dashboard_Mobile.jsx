@@ -13,7 +13,7 @@ import {
   ChevronRight,
   BarChart3,
   PieChart,
-  Activity
+  Activity,
 } from "lucide-react";
 import api from "../utils/api";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -47,11 +47,14 @@ function DashboardMobile() {
       const endDate = new Date();
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - 7);
-      
+
       const startDateStr = startDate.toISOString().split("T")[0];
       const endDateStr = endDate.toISOString().split("T")[0];
 
-      console.log("📅 Fetching data for date range:", { startDateStr, endDateStr });
+      console.log("📅 Fetching data for date range:", {
+        startDateStr,
+        endDateStr,
+      });
 
       // Fetch all dashboard data
       const [
@@ -60,14 +63,16 @@ function DashboardMobile() {
         p2pTransactionsResponse,
         p2pSummaryResponse,
         categoryResponse,
-        trendResponse
+        trendResponse,
       ] = await Promise.all([
         api.get("/analytics/summary"),
         api.get("/transactions?limit=5"),
         api.get("/transactions/p2p?limit=3"),
         api.get("/transactions/p2p/summary"),
         api.get("/analytics/by-category?limit=6"),
-        api.get(`/analytics/by-date?startDate=${startDateStr}&endDate=${endDateStr}&groupBy=day`)
+        api.get(
+          `/analytics/by-date?startDate=${startDateStr}&endDate=${endDateStr}&groupBy=day`
+        ),
       ]);
 
       console.log("📊 API Responses received:");
@@ -83,9 +88,11 @@ function DashboardMobile() {
       setTrendData(trendResponse.data.trends || []);
 
       console.log("🎯 State updated:");
-      console.log("Category data length:", categoryResponse.data.categories?.length || 0);
+      console.log(
+        "Category data length:",
+        categoryResponse.data.categories?.length || 0
+      );
       console.log("Trend data length:", trendResponse.data.trends?.length || 0);
-
     } catch (error) {
       console.error("❌ Failed to fetch dashboard data:", error);
       // Set empty arrays as fallback
@@ -136,7 +143,7 @@ function DashboardMobile() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-bold text-gray-900">
-                Hi, {user?.name?.split(' ')[0]}! 👋
+                Hi, {user?.name?.split(" ")[0]}! 👋
               </h1>
               <p className="text-sm text-gray-600">Welcome back</p>
             </div>
@@ -154,30 +161,32 @@ function DashboardMobile() {
 
       {/* Quick Summary Cards - Horizontal Scroll */}
       <div className="bg-white border-b">
-        <div className="px-4 py-4">
-          <div className="flex space-x-3 overflow-x-auto pb-2">
+        <div className="px-4 py-2">
+          <div className="flex space-x-1.5 overflow-x-auto pb-1">
             {/* Net Balance - Primary Card */}
-            <div className="flex-shrink-0 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-4 text-white min-w-[200px]">
+            <div className="flex-shrink-0 bg-gradient-to-r from-blue-500 to-blue-600 rounded-md p-2 text-white min-w-[140px]">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-blue-100 text-xs font-medium">Net Balance</p>
-                  <p className="text-2xl font-bold">
+                  <p className="text-blue-100 text-xs font-medium">
+                    Net Balance
+                  </p>
+                  <p className="text-lg font-bold">
                     {formatCurrencyCompact(summary?.netIncome || 0)}
                   </p>
                 </div>
-                <IndianRupee className="h-8 w-8 text-blue-200" />
+                <IndianRupee className="h-5 w-5 text-blue-200" />
               </div>
             </div>
 
             {/* Income Card */}
-            <div className="flex-shrink-0 bg-white border border-gray-200 rounded-xl p-4 min-w-[140px]">
+            <div className="flex-shrink-0 bg-white border border-gray-200 rounded-md p-2 min-w-[100px]">
               <div className="flex items-center">
-                <div className="p-2 bg-green-100 rounded-lg mr-3">
-                  <TrendingUp className="h-4 w-4 text-green-600" />
+                <div className="p-1 bg-green-100 rounded-sm mr-1.5">
+                  <TrendingUp className="h-3 w-3 text-green-600" />
                 </div>
                 <div>
                   <p className="text-xs font-medium text-gray-600">Income</p>
-                  <p className="text-lg font-bold text-gray-900">
+                  <p className="text-sm font-bold text-gray-900">
                     {formatCurrencyCompact(summary?.totalIncome || 0)}
                   </p>
                 </div>
@@ -185,14 +194,14 @@ function DashboardMobile() {
             </div>
 
             {/* Expenses Card */}
-            <div className="flex-shrink-0 bg-white border border-gray-200 rounded-xl p-4 min-w-[140px]">
+            <div className="flex-shrink-0 bg-white border border-gray-200 rounded-md p-2 min-w-[100px]">
               <div className="flex items-center">
-                <div className="p-2 bg-red-100 rounded-lg mr-3">
-                  <TrendingDown className="h-4 w-4 text-red-600" />
+                <div className="p-1 bg-red-100 rounded-sm mr-1.5">
+                  <TrendingDown className="h-3 w-3 text-red-600" />
                 </div>
                 <div>
                   <p className="text-xs font-medium text-gray-600">Expenses</p>
-                  <p className="text-lg font-bold text-gray-900">
+                  <p className="text-sm font-bold text-gray-900">
                     {formatCurrencyCompact(summary?.totalExpenses || 0)}
                   </p>
                 </div>
@@ -200,14 +209,16 @@ function DashboardMobile() {
             </div>
 
             {/* Transactions Count */}
-            <div className="flex-shrink-0 bg-white border border-gray-200 rounded-xl p-4 min-w-[140px]">
+            <div className="flex-shrink-0 bg-white border border-gray-200 rounded-md p-2 min-w-[100px]">
               <div className="flex items-center">
-                <div className="p-2 bg-purple-100 rounded-lg mr-3">
-                  <Receipt className="h-4 w-4 text-purple-600" />
+                <div className="p-1 bg-purple-100 rounded-sm mr-1.5">
+                  <Receipt className="h-3 w-3 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-600">Transactions</p>
-                  <p className="text-lg font-bold text-gray-900">
+                  <p className="text-xs font-medium text-gray-600">
+                    Transactions
+                  </p>
+                  <p className="text-sm font-bold text-gray-900">
                     {summary?.transactionCount || 0}
                   </p>
                 </div>
@@ -224,7 +235,7 @@ function DashboardMobile() {
             {[
               { id: "overview", label: "Overview", icon: BarChart3 },
               { id: "spending", label: "Spending", icon: PieChart },
-              { id: "trends", label: "Trends", icon: Activity }
+              { id: "trends", label: "Trends", icon: Activity },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -255,10 +266,14 @@ function DashboardMobile() {
             />
 
             {/* P2P Summary */}
-            {(recentP2P.length > 0 || p2pSummary?.totalLent > 0 || p2pSummary?.totalBorrowed > 0) && (
+            {(recentP2P.length > 0 ||
+              p2pSummary?.totalLent > 0 ||
+              p2pSummary?.totalBorrowed > 0) && (
               <div className="bg-white rounded-xl border border-gray-200 p-4">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">P2P Overview</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    P2P Overview
+                  </h3>
                   <Link
                     to="/p2p"
                     className="text-blue-600 text-sm font-medium flex items-center"
@@ -274,7 +289,9 @@ function DashboardMobile() {
                     <div className="flex items-center">
                       <ArrowDownLeft className="h-4 w-4 text-green-600 mr-2" />
                       <div>
-                        <p className="text-xs text-green-600 font-medium">Lent</p>
+                        <p className="text-xs text-green-600 font-medium">
+                          Lent
+                        </p>
                         <p className="text-sm font-bold text-green-700">
                           {formatCurrencyCompact(p2pSummary?.totalLent || 0)}
                         </p>
@@ -285,9 +302,13 @@ function DashboardMobile() {
                     <div className="flex items-center">
                       <ArrowUpRight className="h-4 w-4 text-orange-600 mr-2" />
                       <div>
-                        <p className="text-xs text-orange-600 font-medium">Borrowed</p>
+                        <p className="text-xs text-orange-600 font-medium">
+                          Borrowed
+                        </p>
                         <p className="text-sm font-bold text-orange-700">
-                          {formatCurrencyCompact(p2pSummary?.totalBorrowed || 0)}
+                          {formatCurrencyCompact(
+                            p2pSummary?.totalBorrowed || 0
+                          )}
                         </p>
                       </div>
                     </div>
@@ -299,7 +320,11 @@ function DashboardMobile() {
                   <div className="space-y-3">
                     {recentP2P.slice(0, 3).map((transaction) => {
                       const p2p = transaction.personToPerson;
-                      const isOutgoing = ["lent", "gift_given", "payment"].includes(p2p.type);
+                      const isOutgoing = [
+                        "lent",
+                        "gift_given",
+                        "payment",
+                      ].includes(p2p.type);
 
                       return (
                         <div
@@ -325,7 +350,8 @@ function DashboardMobile() {
                                 {p2p.personName}
                               </p>
                               <p className="text-xs text-gray-500">
-                                {p2p.type.replace("_", " ")} • {formatDate(transaction.date)}
+                                {p2p.type.replace("_", " ")} •{" "}
+                                {formatDate(transaction.date)}
                               </p>
                             </div>
                           </div>
@@ -369,7 +395,9 @@ function DashboardMobile() {
               <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
                 <PieChart className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                 <p className="text-gray-500 mb-2">No spending data available</p>
-                <p className="text-sm text-gray-400">Add some transactions to see your spending breakdown</p>
+                <p className="text-sm text-gray-400">
+                  Add some transactions to see your spending breakdown
+                </p>
               </div>
             )}
           </div>
@@ -387,7 +415,9 @@ function DashboardMobile() {
               <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
                 <Activity className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                 <p className="text-gray-500 mb-2">No trend data available</p>
-                <p className="text-sm text-gray-400">Add some transactions to see your spending trends</p>
+                <p className="text-sm text-gray-400">
+                  Add some transactions to see your spending trends
+                </p>
               </div>
             )}
           </div>

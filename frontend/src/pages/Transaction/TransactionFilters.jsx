@@ -1,4 +1,28 @@
-import { Search } from "lucide-react";
+import { Search, Calendar, X } from "lucide-react";
+
+// Quick date filter configurations
+const QUICK_FILTERS = [
+  {
+    type: "lastMonth",
+    label: "Last 30d",
+    styles: "bg-blue-100 text-blue-700 hover:bg-blue-200",
+  },
+  {
+    type: "thisMonth",
+    label: "This Month",
+    styles: "bg-green-100 text-green-700 hover:bg-green-200",
+  },
+  {
+    type: "lastYear",
+    label: "Last Year",
+    styles: "bg-purple-100 text-purple-700 hover:bg-purple-200",
+  },
+  {
+    type: "allTime",
+    label: "All",
+    styles: "bg-gray-100 text-gray-700 hover:bg-gray-200",
+  },
+];
 
 const TransactionFilters = ({ filters, onFilterChange }) => {
   const handleQuickDateFilter = (type) => {
@@ -40,33 +64,87 @@ const TransactionFilters = ({ filters, onFilterChange }) => {
     onFilterChange("endDate", endDate);
   };
 
+  const clearFilter = (filterName) => {
+    onFilterChange(filterName, "");
+  };
+
+  const hasActiveFilters =
+    filters.search || filters.type || filters.startDate || filters.endDate;
+
+  const clearAllFilters = () => {
+    onFilterChange("search", "");
+    onFilterChange("type", "");
+    onFilterChange("startDate", "");
+    onFilterChange("endDate", "");
+  };
+
   return (
-    <div className="card">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+    <div className="space-y-3">
+      {/* Quick Date Filters - Top Row */}
+      <div className="flex flex-wrap gap-2">
+        {QUICK_FILTERS.map(({ type, label, styles }) => (
+          <button
+            key={type}
+            onClick={() => handleQuickDateFilter(type)}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${styles}`}
+          >
+            {label}
+          </button>
+        ))}
+        {hasActiveFilters && (
+          <button
+            onClick={clearAllFilters}
+            className="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors flex items-center gap-1"
+          >
+            <X className="h-3 w-3" />
+            Clear All
+          </button>
+        )}
+      </div>
+
+      {/* Main Filters */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Search */}
+        <div className="relative">
+          <label className="block text-xs font-medium text-gray-700 mb-1.5">
             Search
           </label>
           <div className="relative">
-            <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
             <input
               type="text"
-              placeholder="Search transactions..."
-              className="input pl-10"
+              placeholder="Search..."
+              className="w-full pl-9 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
               value={filters.search}
               onChange={(e) => onFilterChange("search", e.target.value)}
             />
+            {filters.search && (
+              <button
+                onClick={() => clearFilter("search")}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+        {/* Type */}
+        <div className="relative">
+          <label className="block text-xs font-medium text-gray-700 mb-1.5">
             Type
           </label>
           <select
-            className="input"
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer appearance-none bg-white"
             value={filters.type}
             onChange={(e) => onFilterChange("type", e.target.value)}
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+              backgroundPosition: "right 0.5rem center",
+              backgroundRepeat: "no-repeat",
+              backgroundSize: "1.5em 1.5em",
+              paddingRight: "2.5rem",
+            }}
           >
             <option value="">All Types</option>
             <option value="income">Income</option>
@@ -74,57 +152,99 @@ const TransactionFilters = ({ filters, onFilterChange }) => {
           </select>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Start Date
+        {/* Start Date */}
+        <div className="relative">
+          <label className="block text-xs font-medium text-gray-700 mb-1.5">
+            <span className="hidden sm:inline">Start Date</span>
+            <span className="sm:hidden">From</span>
           </label>
-          <input
-            type="date"
-            className="input"
-            value={filters.startDate}
-            onChange={(e) => onFilterChange("startDate", e.target.value)}
-          />
+          <div className="relative">
+            <Calendar className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none z-10" />
+            <input
+              type="text"
+              placeholder="YYYY-MM-DD"
+              className="w-full pl-9 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              value={filters.startDate}
+              onChange={(e) => {
+                // Allow all typing, validate on blur
+                const value = e.target.value;
+                onFilterChange("startDate", value);
+              }}
+              onBlur={(e) => {
+                // Format date on blur if valid
+                const value = e.target.value.trim();
+                if (value === "") {
+                  onFilterChange("startDate", "");
+                  return;
+                }
+
+                // Try to parse and format the date
+                if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(value)) {
+                  const date = new Date(value);
+                  if (!isNaN(date.getTime())) {
+                    const formatted = date.toISOString().split("T")[0];
+                    onFilterChange("startDate", formatted);
+                  }
+                }
+              }}
+            />
+            {filters.startDate && (
+              <button
+                onClick={() => clearFilter("startDate")}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            End Date
+        {/* End Date */}
+        <div className="relative">
+          <label className="block text-xs font-medium text-gray-700 mb-1.5">
+            <span className="hidden sm:inline">End Date</span>
+            <span className="sm:hidden">To</span>
           </label>
-          <input
-            type="date"
-            className="input"
-            value={filters.endDate}
-            onChange={(e) => onFilterChange("endDate", e.target.value)}
-          />
-        </div>
-      </div>
+          <div className="relative">
+            <Calendar className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none z-10" />
+            <input
+              type="text"
+              placeholder="YYYY-MM-DD"
+              className="w-full pl-9 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              value={filters.endDate}
+              onChange={(e) => {
+                // Allow all typing, validate on blur
+                const value = e.target.value;
+                onFilterChange("endDate", value);
+              }}
+              onBlur={(e) => {
+                // Format date on blur if valid
+                const value = e.target.value.trim();
+                if (value === "") {
+                  onFilterChange("endDate", "");
+                  return;
+                }
 
-      {/* Quick Date Filters */}
-      <div className="flex flex-wrap gap-2 mt-4">
-        <button
-          onClick={() => handleQuickDateFilter("lastMonth")}
-          className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
-        >
-          Last 30 Days
-        </button>
-        <button
-          onClick={() => handleQuickDateFilter("thisMonth")}
-          className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
-        >
-          This Month
-        </button>
-        <button
-          onClick={() => handleQuickDateFilter("lastYear")}
-          className="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors"
-        >
-          Last Year
-        </button>
-        <button
-          onClick={() => handleQuickDateFilter("allTime")}
-          className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
-        >
-          All Time
-        </button>
+                // Try to parse and format the date
+                if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(value)) {
+                  const date = new Date(value);
+                  if (!isNaN(date.getTime())) {
+                    const formatted = date.toISOString().split("T")[0];
+                    onFilterChange("endDate", formatted);
+                  }
+                }
+              }}
+            />
+            {filters.endDate && (
+              <button
+                onClick={() => clearFilter("endDate")}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

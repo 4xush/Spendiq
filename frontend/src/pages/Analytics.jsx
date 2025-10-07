@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { TrendingUp, Users } from "lucide-react";
+import { TrendingUp, Users, Download } from "lucide-react";
 import api from "../utils/api";
 import LoadingSpinner from "../components/LoadingSpinner";
 import P2PAnalytics from "../components/P2PAnalytics";
@@ -18,6 +18,7 @@ function Analytics() {
   const [allCategories, setAllCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("general");
+  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
       .toISOString()
@@ -53,22 +54,15 @@ function Analytics() {
 
       const params = new URLSearchParams();
 
-      // Date filters
       if (filters.startDate) params.append("startDate", filters.startDate);
       if (filters.endDate) params.append("endDate", filters.endDate);
-
-      // Search filter
       if (filters.search) params.append("search", filters.search);
-
-      // Type filter
       if (filters.type) params.append("type", filters.type);
 
-      // Category filter
       if (filters.categories.length > 0) {
         filters.categories.forEach((cat) => params.append("categories", cat));
       }
 
-      // Amount range filter
       if (filters.amountRange.min !== null) {
         params.append("minAmount", filters.amountRange.min);
       }
@@ -76,7 +70,6 @@ function Analytics() {
         params.append("maxAmount", filters.amountRange.max);
       }
 
-      // Fetch all analytics data with filters
       const [summaryRes, categoryRes, trendRes, topCategoriesRes] =
         await Promise.all([
           api.get(`/analytics/summary?${params}`),
@@ -116,103 +109,158 @@ function Analytics() {
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount);
   };
 
   if (loading && !summary) {
     return (
-      <div className="flex items-center justify-center h-96">
+      <div className="flex items-center justify-center min-h-screen">
         <LoadingSpinner size="large" />
       </div>
     );
   }
 
+  const hasActiveFilters = 
+    filters.search || 
+    filters.type || 
+    filters.categories.length > 0 || 
+    filters.amountRange.min !== null || 
+    filters.amountRange.max !== null;
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
-          <p className="text-gray-600">Insights into your financial patterns</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Sticky Header */}
+      <div className="bg-white sticky top-0 z-10 shadow-sm rounded-lg pd-2 mb-2">
+  <div className="container mx-auto px-4 py-4">
+    {/* Header */}
+    <div className="flex items-center justify-between mb-4">
+      <div>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+          Analytics
+        </h1>
+        <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+          Financial insights
+        </p>
+      </div>
+
+      {/* Export Button */}
+      <button
+        onClick={handleExport}
+        disabled={loading}
+        className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:shadow-md active:scale-95 text-sm font-medium shadow-sm"
+      >
+        <Download className="h-4 w-4" />
+        <span className="hidden sm:inline">Export</span>
+      </button>
+    </div>
+
+    {/* Tab Navigation - Pill Style */}
+    <div className="flex gap-2 bg-gray-100 p-1 rounded-xl w-fit">
+      <button
+        onClick={() => setActiveTab("general")}
+        className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+          activeTab === "general"
+            ? "bg-white text-blue-600 shadow-sm"
+            : "text-gray-600 hover:text-gray-900"
+        }`}
+      >
+        <TrendingUp className="h-4 w-4" />
+        <span className="hidden sm:inline">General</span>
+      </button>
+      <button
+        onClick={() => setActiveTab("p2p")}
+        className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+          activeTab === "p2p"
+            ? "bg-white text-blue-600 shadow-sm"
+            : "text-gray-600 hover:text-gray-900"
+        }`}
+      >
+        <Users className="h-4 w-4" />
+        <span className="hidden sm:inline">P2P</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+      {/* Collapsible Filters */}
+      <div className="bg-white border-b border-gray-200 rounded-md ">
+        <div className="container mx-auto px-4 py-3">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center justify-between w-full text-sm font-medium text-gray-700"
+          >
+            <span className="flex items-center gap-2">
+              Filters
+              {hasActiveFilters && (
+                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs">
+                  Active
+                </span>
+              )}
+            </span>
+            <span className={`transition-transform ${showFilters ? 'rotate-180' : ''}`}>
+              ▼
+            </span>
+          </button>
+
+          {showFilters && (
+            <div className="mt-4">
+              <AnalyticsFilters
+                filters={filters}
+                onFiltersChange={setFilters}
+                onExport={handleExport}
+                categories={allCategories}
+                loading={loading}
+              />
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Filters */}
-      <AnalyticsFilters
-        filters={filters}
-        onFiltersChange={setFilters}
-        onExport={handleExport}
-        categories={allCategories}
-        loading={loading}
-      />
-
-      {/* Tab Navigation */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab("general")}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === "general"
-                ? "border-blue-500 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            }`}
-          >
-            <div className="flex items-center space-x-2">
-              <TrendingUp className="h-4 w-4" />
-              <span>General Analytics</span>
-            </div>
-          </button>
-          <button
-            onClick={() => setActiveTab("p2p")}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === "p2p"
-                ? "border-blue-500 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            }`}
-          >
-            <div className="flex items-center space-x-2">
-              <Users className="h-4 w-4" />
-              <span>P2P Analytics</span>
-            </div>
-          </button>
-        </nav>
-      </div>
-
-      {/* Tab Content */}
-      {activeTab === "general" && (
-        <div className="space-y-6">
-          {/* Summary Cards */}
-          <SummaryCards
-            summary={summary}
-            formatCurrency={formatCurrency}
-            loading={loading}
-          />
-            <TrendChart
-              trendData={trendData}
+      {/* Main Content */}
+      <div className="container mx-auto py-4 sm:py-4">
+        {activeTab === "general" ? (
+          <div className="space-y-4 sm:space-y-6">
+            {/* Summary Cards */}
+            <SummaryCards
+              summary={summary}
               formatCurrency={formatCurrency}
               loading={loading}
             />
-          {/* Detailed Table */}
-          <CategoryTable
-            categoryData={categoryData}
-            formatCurrency={formatCurrency}
-            loading={loading}
-          />
-        </div>
-      )}
 
-      {/* P2P Analytics Tab */}
-      {activeTab === "p2p" && (
-        <P2PAnalytics
-          dateRange={{
-            startDate: filters.startDate,
-            endDate: filters.endDate,
-          }}
-        />
-      )}
+            {/* Trend Chart */}
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <TrendChart
+                trendData={trendData}
+                formatCurrency={formatCurrency}
+                loading={loading}
+              />
+            </div>
+
+            {/* Category Table */}
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <CategoryTable
+                categoryData={categoryData}
+                formatCurrency={formatCurrency}
+                loading={loading}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <P2PAnalytics
+              dateRange={{
+                startDate: filters.startDate,
+                endDate: filters.endDate,
+              }}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
