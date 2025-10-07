@@ -33,6 +33,15 @@ const COLORS = [
   "#EC4899", // Pink for other
 ];
 
+const P2P_COLORS = {
+  lent: "#10B981",
+  borrowed: "#EF4444",
+  gift_given: "#F59E0B",
+  gift_received: "#8B5CF6",
+  payment: "#3B82F6",
+  reimbursement: "#EC4899",
+};
+
 const STATUS_COLORS = {
   pending: "#F59E0B",
   completed: "#10B981",
@@ -87,18 +96,26 @@ function P2PAnalytics({ dateRange }) {
   const getTransactionTypeData = () => {
     const typeCount = {};
     const typeAmount = {};
+    const typePending = {};
 
     p2pTransactions.forEach((transaction) => {
       const type = transaction.personToPerson.type;
       typeCount[type] = (typeCount[type] || 0) + 1;
       typeAmount[type] = (typeAmount[type] || 0) + transaction.amount;
+      if (transaction.personToPerson.status === "pending") {
+        typePending[type] = (typePending[type] || 0) + transaction.amount;
+      }
     });
 
-    return Object.keys(typeCount).map((type) => ({
-      type: type.replace("_", " ").toUpperCase(),
-      count: typeCount[type],
-      amount: typeAmount[type],
-    }));
+    return Object.keys(typeCount)
+      .map((type) => ({
+        type: type.replace("_", " ").toUpperCase(),
+        count: typeCount[type],
+        amount: typeAmount[type],
+        pendingAmount: typePending[type] || 0,
+        fill: P2P_COLORS[type] || "#6B7280",
+      }))
+      .sort((a, b) => b.amount - a.amount);
   };
 
   const getStatusData = () => {
@@ -242,7 +259,7 @@ function P2PAnalytics({ dateRange }) {
     <div className="space-y-6">
       {/* P2P Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="card border-l-4 border-green-500">
+        <div className="bg-white rounded-lg border p-4 hover:shadow-md transition-shadow">
           <div className="flex items-center">
             <div className="p-3 bg-green-100 rounded-lg">
               <ArrowUpRight className="h-6 w-6 text-green-600" />
@@ -256,7 +273,7 @@ function P2PAnalytics({ dateRange }) {
           </div>
         </div>
 
-        <div className="card border-l-4 border-red-500">
+        <div className="bg-white rounded-lg border p-4 hover:shadow-md transition-shadow">
           <div className="flex items-center">
             <div className="p-3 bg-red-100 rounded-lg">
               <ArrowDownLeft className="h-6 w-6 text-red-600" />
@@ -272,7 +289,7 @@ function P2PAnalytics({ dateRange }) {
           </div>
         </div>
 
-        <div className="card border-l-4 border-blue-500">
+        <div className="bg-white rounded-lg border p-4 hover:shadow-md transition-shadow">
           <div className="flex items-center">
             <div className="p-3 bg-blue-100 rounded-lg">
               <Users className="h-6 w-6 text-blue-600" />
@@ -292,7 +309,7 @@ function P2PAnalytics({ dateRange }) {
           </div>
         </div>
 
-        <div className="card border-l-4 border-orange-500">
+        <div className="bg-white rounded-lg border p-4 hover:shadow-md transition-shadow">
           <div className="flex items-center">
             <div className="p-3 bg-orange-100 rounded-lg">
               <Clock className="h-6 w-6 text-orange-600" />
@@ -310,56 +327,225 @@ function P2PAnalytics({ dateRange }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Transaction Types Distribution */}
+        {/* P2P Transactions */}
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Transaction Types
-          </h3>
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                P2P Transactions
+              </h3>
+              <p className="text-sm text-gray-500">
+                Total:{" "}
+                {formatCurrency(
+                  typeData.reduce((sum, item) => sum + item.amount, 0)
+                )}
+              </p>
+            </div>
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Users className="h-5 w-5 text-blue-600" />
+            </div>
+          </div>
+
           {typeData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={typeData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ type, count }) => `${type}: ${count}`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="amount"
-                >
+              <BarChart
+                data={typeData}
+                margin={{ top: 5, right: 5, left: 5, bottom: 60 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                <XAxis
+                  dataKey="type"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: "#6B7280" }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: "#6B7280" }}
+                  tickFormatter={(value) => `₹${value / 1000}k`}
+                  width={60}
+                />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-white p-4 rounded-xl shadow-2xl border-2 border-gray-200 backdrop-blur-sm">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: data.fill }}
+                            />
+                            <p className="text-sm font-semibold text-gray-900">
+                              {data.type}
+                            </p>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex justify-between gap-4">
+                              <span className="text-xs text-gray-600">
+                                Amount:
+                              </span>
+                              <span className="text-sm font-bold text-gray-900">
+                                {formatCurrency(data.amount)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between gap-4">
+                              <span className="text-xs text-gray-600">
+                                Count:
+                              </span>
+                              <span className="text-sm font-bold text-gray-700">
+                                {data.count} transactions
+                              </span>
+                            </div>
+                            {data.pendingAmount > 0 && (
+                              <div className="flex justify-between gap-4">
+                                <span className="text-xs text-gray-600">
+                                  Pending:
+                                </span>
+                                <span className="text-sm font-bold text-orange-600">
+                                  {formatCurrency(data.pendingAmount)}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Bar dataKey="amount" radius={[4, 4, 0, 0]} fill="#3B82F6">
                   {typeData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
+                    <Cell key={`p2p-cell-${index}`} fill={entry.fill} />
                   ))}
-                </Pie>
-                <Tooltip formatter={(value) => formatCurrency(value)} />
-              </PieChart>
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           ) : (
             <div className="flex items-center justify-center h-64 text-gray-500">
               No P2P transaction data available
             </div>
           )}
+
+          {/* P2P Quick Stats */}
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+              <div className="flex items-center">
+                <ArrowUpRight className="h-4 w-4 text-green-600 mr-2" />
+                <div>
+                  <p className="text-sm text-green-700 font-medium">
+                    Total Lent
+                  </p>
+                  <p className="text-lg font-bold text-green-800">
+                    {formatCurrency(p2pSummary?.totalLent || 0)}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-red-50 p-3 rounded-lg border border-red-200">
+              <div className="flex items-center">
+                <ArrowDownLeft className="h-4 w-4 text-red-600 mr-2" />
+                <div>
+                  <p className="text-sm text-red-700 font-medium">
+                    Total Borrowed
+                  </p>
+                  <p className="text-lg font-bold text-red-800">
+                    {formatCurrency(p2pSummary?.totalBorrowed || 0)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Status Distribution */}
+        {/* Transaction Status */}
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Transaction Status
-          </h3>
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Transaction Status
+              </h3>
+              <p className="text-sm text-gray-500">
+                Total:{" "}
+                {formatCurrency(
+                  statusData.reduce((sum, item) => sum + item.amount, 0)
+                )}
+              </p>
+            </div>
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <CheckCircle className="h-5 w-5 text-purple-600" />
+            </div>
+          </div>
+
           {statusData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={statusData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="status" />
-                <YAxis tickFormatter={(value) => `₹${value / 1000}k`} />
-                <Tooltip
-                  formatter={(value) => [formatCurrency(value), "Amount"]}
+              <BarChart
+                data={statusData}
+                margin={{ top: 5, right: 5, left: 5, bottom: 40 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                <XAxis
+                  dataKey="status"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: "#6B7280" }}
+                  height={40}
                 />
-                <Bar dataKey="amount" fill="#3B82F6" />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: "#6B7280" }}
+                  tickFormatter={(value) => `₹${value / 1000}k`}
+                  width={60}
+                />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-white p-4 rounded-xl shadow-2xl border-2 border-gray-200 backdrop-blur-sm">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: data.color }}
+                            />
+                            <p className="text-sm font-semibold text-gray-900">
+                              {data.status}
+                            </p>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex justify-between gap-4">
+                              <span className="text-xs text-gray-600">
+                                Amount:
+                              </span>
+                              <span className="text-sm font-bold text-gray-900">
+                                {formatCurrency(data.amount)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between gap-4">
+                              <span className="text-xs text-gray-600">
+                                Count:
+                              </span>
+                              <span className="text-sm font-bold text-gray-700">
+                                {data.count} transactions
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Bar dataKey="amount" radius={[4, 4, 0, 0]} fill="#3B82F6">
+                  {statusData.map((entry, index) => (
+                    <Cell key={`status-cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -367,49 +553,44 @@ function P2PAnalytics({ dateRange }) {
               No status data available
             </div>
           )}
+
+          {/* Status Quick Stats */}
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+              <div className="flex items-center">
+                <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                <div>
+                  <p className="text-sm text-green-700 font-medium">
+                    Completed
+                  </p>
+                  <p className="text-lg font-bold text-green-800">
+                    {formatCurrency(
+                      statusData.find(
+                        (s) => s.status.toLowerCase() === "completed"
+                      )?.amount || 0
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
+              <div className="flex items-center">
+                <Clock className="h-4 w-4 text-orange-600 mr-2" />
+                <div>
+                  <p className="text-sm text-orange-700 font-medium">Pending</p>
+                  <p className="text-lg font-bold text-orange-800">
+                    {formatCurrency(
+                      statusData.find(
+                        (s) => s.status.toLowerCase() === "pending"
+                      )?.amount || 0
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-
-      {/* Monthly Trend */}
-      {monthlyTrend.length > 0 && (
-        <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Monthly P2P Trend
-          </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={monthlyTrend}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis tickFormatter={(value) => `₹${value / 1000}k`} />
-              <Tooltip
-                formatter={(value, name) => [formatCurrency(value), name]}
-              />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="lent"
-                stroke="#10B981"
-                strokeWidth={2}
-                name="Lent"
-              />
-              <Line
-                type="monotone"
-                dataKey="borrowed"
-                stroke="#EF4444"
-                strokeWidth={2}
-                name="Borrowed"
-              />
-              <Line
-                type="monotone"
-                dataKey="net"
-                stroke="#3B82F6"
-                strokeWidth={2}
-                name="Net"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      )}
 
       {/* Person-wise Breakdown */}
       {personWiseData.length > 0 && (

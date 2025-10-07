@@ -14,12 +14,29 @@ import {
 import { TrendingUp, TrendingDown, BarChart3 } from "lucide-react";
 
 const TrendChart = ({ trendData, formatCurrency, loading = false }) => {
-  const [chartType, setChartType] = useState("line"); // line or area
+  const [chartType, setChartType] = useState("area"); // line or area
+  const [dayFilter, setDayFilter] = useState(30); // Default to 30 days
   const [visibleLines, setVisibleLines] = useState({
     income: true,
     expenses: true,
     netAmount: true,
   });
+
+  // Filter data based on selected days
+  const getFilteredData = () => {
+    if (!trendData || trendData.length === 0) return [];
+
+    const today = new Date();
+    const cutoffDate = new Date();
+    cutoffDate.setDate(today.getDate() - dayFilter);
+
+    return trendData.filter((item) => {
+      const itemDate = new Date(item.date);
+      return itemDate >= cutoffDate;
+    });
+  };
+
+  const filteredData = getFilteredData();
 
   if (loading) {
     return (
@@ -41,6 +58,59 @@ const TrendChart = ({ trendData, formatCurrency, loading = false }) => {
             <div className="text-4xl mb-2">📈</div>
             <p>No trend data available</p>
             <p className="text-sm">Add transactions over time to see trends</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (filteredData.length === 0) {
+    return (
+      <div className="bg-white rounded-lg border p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-gray-900">
+            Income vs Expenses Trend
+          </h3>
+          <div className="flex items-center space-x-2">
+            <select
+              value={dayFilter}
+              onChange={(e) => setDayFilter(parseInt(e.target.value))}
+              className="px-3 py-1 border border-gray-300 rounded text-sm bg-white"
+            >
+              <option value={7}>Last 7 days</option>
+              <option value={14}>Last 14 days</option>
+              <option value={30}>Last 30 days</option>
+              <option value={60}>Last 60 days</option>
+              <option value={90}>Last 90 days</option>
+              <option value={365}>Last year</option>
+            </select>
+            <button
+              onClick={() => setChartType("line")}
+              className={`px-3 py-1 rounded text-sm ${
+                chartType === "line"
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              Line
+            </button>
+            <button
+              onClick={() => setChartType("area")}
+              className={`px-3 py-1 rounded text-sm ${
+                chartType === "area"
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              Area
+            </button>
+          </div>
+        </div>
+        <div className="flex items-center justify-center h-80 text-gray-500">
+          <div className="text-center">
+            <div className="text-4xl mb-2">📈</div>
+            <p>No data for the last {dayFilter} days</p>
+            <p className="text-sm">Try selecting a different time period</p>
           </div>
         </div>
       </div>
@@ -93,18 +163,18 @@ const TrendChart = ({ trendData, formatCurrency, loading = false }) => {
     netAmount: { color: "#3B82F6", name: "Net Amount", icon: BarChart3 },
   };
 
-  const totalIncome = trendData.reduce(
+  const totalIncome = filteredData.reduce(
     (sum, item) => sum + (item.income || 0),
     0
   );
-  const totalExpenses = trendData.reduce(
+  const totalExpenses = filteredData.reduce(
     (sum, item) => sum + (item.expenses || 0),
     0
   );
   const avgDaily = {
-    income: totalIncome / trendData.length,
-    expenses: totalExpenses / trendData.length,
-    netAmount: (totalIncome - totalExpenses) / trendData.length,
+    income: totalIncome / filteredData.length,
+    expenses: totalExpenses / filteredData.length,
+    netAmount: (totalIncome - totalExpenses) / filteredData.length,
   };
 
   return (
@@ -114,9 +184,22 @@ const TrendChart = ({ trendData, formatCurrency, loading = false }) => {
           Income vs Expenses Trend
         </h3>
         <div className="flex items-center space-x-2">
+          <select
+            value={dayFilter}
+            onChange={(e) => setDayFilter(parseInt(e.target.value))}
+            className="px-3 py-1 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value={7}>Last 7 days</option>
+            <option value={14}>Last 14 days</option>
+            <option value={30}>Last 30 days</option>
+            <option value={60}>Last 60 days</option>
+            <option value={90}>Last 90 days</option>
+            <option value={365}>Last year</option>
+          </select>
+          <div className="h-6 w-px bg-gray-300"></div>
           <button
             onClick={() => setChartType("line")}
-            className={`px-3 py-1 rounded text-sm ${
+            className={`px-3 py-1 rounded text-sm transition-colors ${
               chartType === "line"
                 ? "bg-blue-500 text-white"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -126,7 +209,7 @@ const TrendChart = ({ trendData, formatCurrency, loading = false }) => {
           </button>
           <button
             onClick={() => setChartType("area")}
-            className={`px-3 py-1 rounded text-sm ${
+            className={`px-3 py-1 rounded text-sm transition-colors ${
               chartType === "area"
                 ? "bg-blue-500 text-white"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -163,7 +246,7 @@ const TrendChart = ({ trendData, formatCurrency, loading = false }) => {
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
           {chartType === "line" ? (
-            <LineChart data={trendData}>
+            <LineChart data={filteredData}>
               <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
               <XAxis
                 dataKey="date"
@@ -192,7 +275,7 @@ const TrendChart = ({ trendData, formatCurrency, loading = false }) => {
               )}
             </LineChart>
           ) : (
-            <AreaChart data={trendData}>
+            <AreaChart data={filteredData}>
               <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
               <XAxis
                 dataKey="date"

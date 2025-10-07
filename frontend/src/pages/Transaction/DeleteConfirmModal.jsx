@@ -1,12 +1,20 @@
-const DeleteConfirmModal = ({
-  show,
-  transaction,
-  onClose,
-  onConfirm,
-  formatCurrency,
-  formatDate,
-}) => {
-  if (!show || !transaction) return null;
+const DeleteConfirmModal = ({ transaction, onConfirm, onCancel }) => {
+  if (!transaction) return null;
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "INR",
+    }).format(amount);
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
@@ -30,7 +38,7 @@ const DeleteConfirmModal = ({
           </p>
         </div>
         <div className="flex justify-end space-x-3">
-          <button onClick={onClose} className="btn-secondary">
+          <button onClick={onCancel} className="btn-secondary">
             Cancel
           </button>
           <button

@@ -288,6 +288,191 @@ function Upload() {
     setEditingTransaction(null);
   };
 
+  // Quick action handlers
+  const handleQuickAdd = async (transactionData, resultId, sourceType) => {
+    try {
+      setCreatingTransaction(true);
+
+      // Prepare transaction data for API
+      const apiData = {
+        description:
+          transactionData.merchant ||
+          transactionData.description ||
+          "Transaction",
+        amount: parseFloat(transactionData.amount) || 0,
+        date: transactionData.date || new Date().toISOString().split("T")[0],
+        category: transactionData.category || "Uncategorized",
+        type: "expense",
+        source: sourceType,
+        metadata: {
+          merchant: transactionData.merchant,
+          items: transactionData.items || [],
+          confidence: transactionData.confidence || 0.8,
+        },
+      };
+
+      const response = await api.post("/transactions", apiData);
+
+      // Update upload results to mark transaction as created
+      setUploadResults((prev) =>
+        prev.map((result) => {
+          if (result.id === resultId) {
+            const isArray = Array.isArray(result.extractedData);
+
+            if (isArray && result.extractedData.length > 1) {
+              // Remove the first transaction from the array
+              const remainingTransactions = result.extractedData.slice(1);
+
+              return {
+                ...result,
+                extractedData: remainingTransactions,
+                createdTransactions: [
+                  ...(result.createdTransactions || []),
+                  response.data.transaction,
+                ],
+                needsConfirmation: remainingTransactions.length > 0,
+                status: "completed",
+              };
+            } else {
+              // Single transaction completed
+              return {
+                ...result,
+                transaction: response.data.transaction,
+                createdTransactions: [
+                  ...(result.createdTransactions || []),
+                  response.data.transaction,
+                ],
+                needsConfirmation: false,
+                status: "completed",
+              };
+            }
+          }
+          return result;
+        })
+      );
+
+      toast.success("Transaction added successfully!");
+    } catch (error) {
+      console.error("Error adding transaction:", error);
+      toast.error("Failed to add transaction. Please try again.");
+    } finally {
+      setCreatingTransaction(false);
+    }
+  };
+
+  const handleQuickSkip = (resultId, sourceType) => {
+    // Update upload results to skip current transaction
+    setUploadResults((prev) =>
+      prev.map((result) => {
+        if (result.id === resultId) {
+          const isArray = Array.isArray(result.extractedData);
+
+          if (isArray && result.extractedData.length > 1) {
+            // Remove the first transaction from the array
+            const remainingTransactions = result.extractedData.slice(1);
+
+            return {
+              ...result,
+              extractedData: remainingTransactions,
+              needsConfirmation: remainingTransactions.length > 0,
+              status:
+                remainingTransactions.length > 0 ? "completed" : "completed",
+            };
+          } else {
+            // Mark as completed without creating transaction
+            return {
+              ...result,
+              needsConfirmation: false,
+              status: "completed",
+              message: "Transaction skipped by user",
+            };
+          }
+        }
+        return result;
+      })
+    );
+
+    toast.success("Transaction skipped!");
+  };
+
+  // Confirm all remaining transactions
+  const handleConfirmAll = async (resultId, sourceType) => {
+    try {
+      setCreatingTransaction(true);
+
+      // Find the result with pending transactions
+      const result = uploadResults.find((r) => r.id === resultId);
+      if (
+        !result ||
+        !Array.isArray(result.extractedData) ||
+        result.extractedData.length === 0
+      ) {
+        toast.error("No transactions to confirm");
+        return;
+      }
+
+      const transactionsToAdd = result.extractedData;
+      const createdTransactions = [];
+
+      // Process each transaction
+      for (const transactionData of transactionsToAdd) {
+        try {
+          const apiData = {
+            description:
+              transactionData.merchant ||
+              transactionData.description ||
+              "Transaction",
+            amount: parseFloat(transactionData.amount) || 0,
+            date:
+              transactionData.date || new Date().toISOString().split("T")[0],
+            category: transactionData.category || "Uncategorized",
+            type: "expense",
+            source: sourceType,
+            metadata: {
+              merchant: transactionData.merchant,
+              items: transactionData.items || [],
+              confidence: transactionData.confidence || 0.8,
+            },
+          };
+
+          const response = await api.post("/transactions", apiData);
+          createdTransactions.push(response.data.transaction);
+        } catch (error) {
+          console.error("Error creating transaction:", error);
+          // Continue with other transactions even if one fails
+        }
+      }
+
+      // Update upload results to mark all transactions as completed
+      setUploadResults((prev) =>
+        prev.map((r) => {
+          if (r.id === resultId) {
+            return {
+              ...r,
+              extractedData: [], // Clear all pending transactions
+              createdTransactions: [
+                ...(r.createdTransactions || []),
+                ...createdTransactions,
+              ],
+              needsConfirmation: false,
+              status: "completed",
+            };
+          }
+          return r;
+        })
+      );
+
+      toast.success(
+        `Successfully added ${createdTransactions.length} transactions!`
+      );
+    } catch (error) {
+      console.error("Error confirming all transactions:", error);
+      toast.error("Failed to add all transactions. Please try again.");
+    } finally {
+      setCreatingTransaction(false);
+    }
+  };
+
   const handleFileUpload = async (file, type) => {
     if (!file) return;
 
@@ -355,7 +540,7 @@ function Upload() {
 
           // Auto-show confirmation modal for first transaction
           if (extractedData[0]) {
-            showTransactionConfirmation(extractedData[0], resultId, actualType);
+            // showTransactionConfirmation(extractedData[0], resultId, actualType);
           }
         } else {
           // No transactions found
@@ -660,8 +845,10 @@ function Upload() {
             uploadResults={uploadResults}
             showTransactionConfirmation={showTransactionConfirmation}
             navigate={navigate}
-            getStatusIcon={getStatusIcon}
-            getStatusText={getStatusText}
+            onQuickAdd={handleQuickAdd}
+            onQuickSkip={handleQuickSkip}
+            onConfirmAll={handleConfirmAll}
+            creatingTransaction={creatingTransaction}
           />
 
           <TipsSection />

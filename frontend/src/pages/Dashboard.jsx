@@ -154,10 +154,6 @@ function Dashboard() {
           </h1>
           <p className="text-gray-600">Here's your financial overview</p>
         </div>
-        <Link to="/transactions" className="btn-primary flex items-center">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Transaction
-        </Link>
       </div>
 
       {/* Summary Cards */}
@@ -226,7 +222,6 @@ function Dashboard() {
           </div>
         </div>
       </div>
-
       {/* Resizable Charts Container */}
       <div
         ref={containerRef}
@@ -418,6 +413,15 @@ function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Floating Action Button */}
+      <Link
+        to="/transactions?add=true"
+        className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 z-10"
+        title="Add Transaction"
+      >
+        <Plus className="h-6 w-6" />
+      </Link>
     </div>
   );
 }

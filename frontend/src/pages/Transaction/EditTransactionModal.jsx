@@ -1,10 +1,11 @@
+import { useState } from "react";
 import toast from "react-hot-toast";
+import api from "../../utils/api";
 
 const EditTransactionModal = ({
-  show,
   transaction,
-  onClose,
-  onSubmit,
+  onSave,
+  onCancel,
   isSubmitting = false,
 }) => {
   const categories = [
@@ -20,11 +21,13 @@ const EditTransactionModal = ({
     "Other",
   ];
 
-  if (!show || !transaction) return null;
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  if (!transaction) return null;
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isSubmitting) return;
+    if (submitting) return;
 
     const formData = new FormData(e.target);
     const description = formData.get("description")?.trim();
@@ -48,7 +51,23 @@ const EditTransactionModal = ({
       type: formData.get("type"),
       date: formData.get("date"),
     };
-    onSubmit(updatedData);
+
+    try {
+      setSubmitting(true);
+      const response = await api.put(
+        `/transactions/${transaction._id}`,
+        updatedData
+      );
+      toast.success("Transaction updated successfully");
+      onSave(response.data.transaction);
+    } catch (error) {
+      console.error("Failed to update transaction:", error);
+      const errorMessage =
+        error.response?.data?.message || "Failed to update transaction";
+      toast.error(errorMessage);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -66,7 +85,7 @@ const EditTransactionModal = ({
               type="text"
               name="description"
               defaultValue={transaction.description || ""}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="input"
               required
             />
           </div>
@@ -79,7 +98,7 @@ const EditTransactionModal = ({
               step="0.01"
               name="amount"
               defaultValue={transaction.amount}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="input"
               required
             />
           </div>
@@ -90,7 +109,7 @@ const EditTransactionModal = ({
             <select
               name="category"
               defaultValue={transaction.category}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="input"
               required
             >
               <option value="">Select Category</option>
@@ -108,7 +127,7 @@ const EditTransactionModal = ({
             <select
               name="type"
               defaultValue={transaction.type}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="input"
             >
               <option value="expense">Expense</option>
               <option value="income">Income</option>
@@ -126,25 +145,25 @@ const EditTransactionModal = ({
                   ? new Date(transaction.date).toISOString().split("T")[0]
                   : ""
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="input"
               required
             />
           </div>
           <div className="flex justify-end space-x-3">
             <button
               type="button"
-              onClick={onClose}
+              onClick={onCancel}
               className="btn-secondary"
-              disabled={isSubmitting}
+              disabled={submitting}
             >
               Cancel
             </button>
             <button
               type="submit"
               className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={isSubmitting}
+              disabled={submitting}
             >
-              {isSubmitting ? "Saving..." : "Save Changes"}
+              {submitting ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </form>

@@ -6,9 +6,7 @@ import P2PAnalytics from "../components/P2PAnalytics";
 import {
   AnalyticsFilters,
   SummaryCards,
-  CategoryChart,
   TrendChart,
-  TopCategoriesChart,
   CategoryTable,
 } from "../components/Analytics";
 
@@ -192,28 +190,11 @@ function Analytics() {
             formatCurrency={formatCurrency}
             loading={loading}
           />
-
-          {/* Charts Grid */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <CategoryChart
-              categoryData={categoryData}
-              formatCurrency={formatCurrency}
-              loading={loading}
-            />
             <TrendChart
               trendData={trendData}
               formatCurrency={formatCurrency}
               loading={loading}
             />
-          </div>
-{/* Not needed for now, leaving it for furure improvements */}
-          {/* Top Categories */}
-          {/* <TopCategoriesChart
-            topCategories={topCategories}
-            formatCurrency={formatCurrency}
-            loading={loading}
-          /> */}
-
           {/* Detailed Table */}
           <CategoryTable
             categoryData={categoryData}

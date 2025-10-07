@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useSearchParams, useLocation } from "react-router-dom";
+import toast from "react-hot-toast";
 import api, { bulkDeleteTransactions } from "../utils/api";
 import TransactionCard from "./Transaction/TransactionCard";
 import TransactionTable from "./Transaction/TransactionTable";
@@ -21,7 +23,6 @@ import {
 const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [viewMode, setViewMode] = useState("table"); // 'card' or 'table'
   const [showForm, setShowForm] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
@@ -44,9 +45,23 @@ const Transactions = () => {
   const [bulkSelectMode, setBulkSelectMode] = useState(false);
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+
   useEffect(() => {
     fetchTransactions();
   }, [filters]);
+
+  // Check for 'add' parameter in URL to auto-open form
+  useEffect(() => {
+    if (searchParams.get("add") === "true") {
+      setShowForm(true);
+      // Remove the parameter from URL after opening form
+      const params = new URLSearchParams(searchParams);
+      params.delete("add");
+      setSearchParams(params, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const fetchTransactions = async () => {
     try {
@@ -63,7 +78,7 @@ const Transactions = () => {
       setTransactions(response.data.transactions);
       setPagination(response.data.pagination);
     } catch (err) {
-      setError("Failed to fetch transactions");
+      toast.error("Failed to load transactions");
       console.error("Fetch transactions error:", err);
     } finally {
       setLoading(false);
@@ -79,6 +94,7 @@ const Transactions = () => {
       const response = await api.get(`/transactions/${transaction._id}`);
       setDetailsTransaction(response.data.transaction);
     } catch (err) {
+      toast.error("Failed to load transaction details");
       console.error("Failed to fetch transaction details:", err);
     }
   };
@@ -94,13 +110,14 @@ const Transactions = () => {
   const confirmDelete = async () => {
     try {
       await api.delete(`/transactions/${deletingTransaction._id}`);
+      toast.success("Transaction deleted successfully");
       setTransactions((prev) =>
         prev.filter((t) => t._id !== deletingTransaction._id)
       );
       setDeletingTransaction(null);
       fetchTransactions(); // Refresh to update pagination
     } catch (err) {
-      setError("Failed to delete transaction");
+      toast.error("Failed to delete transaction");
       console.error("Delete transaction error:", err);
     }
   };
@@ -173,22 +190,24 @@ const Transactions = () => {
       setShowBulkDeleteModal(false);
 
       // Show success message
-      alert(`Successfully deleted ${result.deletedCount} transaction(s)`);
+      toast.success(
+        `Successfully deleted ${result.deletedCount} transaction(s)`
+      );
     } catch (err) {
-      setError("Failed to delete transactions");
+      toast.error("Failed to delete transactions");
       console.error("Bulk delete error:", err);
-      alert("Failed to delete transactions. Please try again.");
     }
   };
 
   const handleTransactionSubmit = async (transactionData) => {
     try {
       const response = await api.post("/transactions", transactionData);
+      toast.success("Transaction added successfully");
       setTransactions((prev) => [response.data.transaction, ...prev]);
       setShowForm(false);
       fetchTransactions(); // Refresh to get updated pagination
     } catch (err) {
-      setError("Failed to create transaction");
+      toast.error("Failed to create transaction");
       console.error("Create transaction error:", err);
     }
   };
@@ -306,12 +325,6 @@ const Transactions = () => {
               </span>
             )}
           </p>
-        </div>
-      )}
-
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
         </div>
       )}
 

@@ -145,7 +145,7 @@ const SevenDayTrend = ({ trendData, formatCurrency, formatDate, width = 50 }) =>
           <h3 className={`font-semibold text-gray-900 transition-all duration-300 ${
             isCompact ? 'text-base' : 'text-lg'
           }`}>
-            {isCompact ? `${daysToShow}D Trend` : `${daysToShow}-Day Financial Trend`}
+            {isCompact ? `${daysToShow}D Trend` : `Past ${daysToShow}-Day Financial Trend`}
           </h3>
           {!isCompact && (
             <p className="text-xs text-gray-500 mt-1">
