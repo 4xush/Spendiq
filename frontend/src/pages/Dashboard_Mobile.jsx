@@ -51,11 +51,6 @@ function DashboardMobile() {
       const startDateStr = startDate.toISOString().split("T")[0];
       const endDateStr = endDate.toISOString().split("T")[0];
 
-      console.log("📅 Fetching data for date range:", {
-        startDateStr,
-        endDateStr,
-      });
-
       // Fetch all dashboard data
       const [
         summaryResponse,
@@ -75,24 +70,12 @@ function DashboardMobile() {
         ),
       ]);
 
-      console.log("📊 API Responses received:");
-      console.log("Summary:", summaryResponse.data);
-      console.log("Categories:", categoryResponse.data);
-      console.log("Trends:", trendResponse.data);
-
       setSummary(summaryResponse.data.summary);
       setRecentTransactions(transactionsResponse.data.transactions || []);
       setRecentP2P(p2pTransactionsResponse.data.transactions || []);
       setP2pSummary(p2pSummaryResponse.data.summary);
       setCategoryData(categoryResponse.data.categories?.slice(0, 6) || []);
       setTrendData(trendResponse.data.trends || []);
-
-      console.log("🎯 State updated:");
-      console.log(
-        "Category data length:",
-        categoryResponse.data.categories?.length || 0
-      );
-      console.log("Trend data length:", trendResponse.data.trends?.length || 0);
     } catch (error) {
       console.error("❌ Failed to fetch dashboard data:", error);
       // Set empty arrays as fallback

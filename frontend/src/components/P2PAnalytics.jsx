@@ -661,47 +661,47 @@ function P2PAnalytics({ dateRange }) {
         </div>
       )}
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="card bg-gradient-to-r from-green-50 to-green-100">
+      {/* Quick Stats - Mobile Optimized */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+        <div className="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-lg p-3 sm:p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-green-700">
+              <p className="text-xs sm:text-sm font-medium text-green-700">
                 Completed Transactions
               </p>
-              <p className="text-2xl font-bold text-green-900">
+              <p className="text-xl sm:text-2xl font-bold text-green-900 mt-1">
                 {calculatedMetrics.completedTransactions || 0}
               </p>
             </div>
-            <CheckCircle className="h-8 w-8 text-green-600" />
+            <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
           </div>
         </div>
 
-        <div className="card bg-gradient-to-r from-orange-50 to-orange-100">
+        <div className="bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-200 rounded-lg p-3 sm:p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-orange-700">
+              <p className="text-xs sm:text-sm font-medium text-orange-700">
                 Pending Transactions
               </p>
-              <p className="text-2xl font-bold text-orange-900">
+              <p className="text-xl sm:text-2xl font-bold text-orange-900 mt-1">
                 {calculatedMetrics.pendingTransactions || 0}
               </p>
             </div>
-            <Clock className="h-8 w-8 text-orange-600" />
+            <Clock className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600" />
           </div>
         </div>
 
-        <div className="card bg-gradient-to-r from-blue-50 to-blue-100">
+        <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-3 sm:p-4 sm:col-span-2 md:col-span-1">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-blue-700">
+              <p className="text-xs sm:text-sm font-medium text-blue-700">
                 Unique Contacts
               </p>
-              <p className="text-2xl font-bold text-blue-900">
+              <p className="text-xl sm:text-2xl font-bold text-blue-900 mt-1">
                 {personWiseData.length}
               </p>
             </div>
-            <Users className="h-8 w-8 text-blue-600" />
+            <Users className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
           </div>
         </div>
       </div>
@@ -710,50 +710,3 @@ function P2PAnalytics({ dateRange }) {
 }
 
 export default P2PAnalytics;
-/*
-{
-  "totalLent": 26500,
-  "totalBorrowed": 37000,
-  "netAmount": -10500,
-  "pendingLent": 8000,
-  "pendingBorrowed": 0,
-  "breakdown": [
-    {
-      "_id": "gift_given",
-      "totalAmount": 7000,
-      "count": 2,
-      "pendingAmount": 0
-    },
-    {
-      "_id": "borrowed",
-      "totalAmount": 37000,
-      "count": 2,
-      "pendingAmount": 0
-    },
-    {
-      "_id": "lent",
-      "totalAmount": 26500,
-      "count": 3,
-      "pendingAmount": 8000
-    },
-    {
-      "_id": "gift_received",
-      "totalAmount": 17500,
-      "count": 2,
-      "pendingAmount": 0
-    },
-    {
-      "_id": "payment",
-      "totalAmount": 4200,
-      "count": 2,
-      "pendingAmount": 0
-    },
-    {
-      "_id": "reimbursement",
-      "totalAmount": 3300,
-      "count": 2,
-      "pendingAmount": 800
-    }
-  ]
-}
-*/

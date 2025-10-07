@@ -75,9 +75,9 @@ if (enableRateLimit) {
         }
     })
     app.use('/api/', limiter)
-    console.log(`🛡️  Rate limiting enabled: ${parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100} requests per ${(parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000) / 60000} minutes`)
+    console.log(` Rate limiting enabled: ${parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100} requests per ${(parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000) / 60000} minutes`)
 } else {
-    console.log('🚀 Rate limiting disabled for development mode')
+    console.log('Rate limiting disabled for development mode')
 }
 
 // Body parsing middleware

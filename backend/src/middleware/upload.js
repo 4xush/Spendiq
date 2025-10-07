@@ -28,7 +28,6 @@ const storage = multer.diskStorage({
 
 // File filter
 const fileFilter = (req, file, cb) => {
-    console.log(`🔍 Validating file: ${file.originalname} (${file.mimetype})`)
 
     // Check file type
     const allowedTypes = [
@@ -41,7 +40,6 @@ const fileFilter = (req, file, cb) => {
     ]
 
     if (!allowedTypes.includes(file.mimetype)) {
-        console.log(`❌ Invalid file type: ${file.mimetype}`)
         return cb(new Error('Invalid file type. Only JPEG, PNG, GIF, WebP, and PDF files are allowed.'), false)
     }
 
@@ -51,12 +49,10 @@ const fileFilter = (req, file, cb) => {
         const fileExtension = extname(file.originalname).toLowerCase()
 
         if (!allowedExtensions.includes(fileExtension)) {
-            console.log(`❌ File extension mismatch: ${fileExtension} for ${file.mimetype}`)
             return cb(new Error('File extension does not match the file type.'), false)
         }
     }
 
-    console.log(`✅ File validation passed`)
     cb(null, true)
 }
 

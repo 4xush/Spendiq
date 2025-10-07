@@ -1,22 +1,49 @@
 import { useState } from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
-import { BarChart3, PieChart as PieChartIcon, ChevronRight } from "lucide-react";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+} from "recharts";
+import {
+  BarChart3,
+  PieChart as PieChartIcon,
+  ChevronRight,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 
 const SpendingOverviewMobile = ({ categoryData, formatCurrency }) => {
   const [viewMode, setViewMode] = useState("chart");
-  
-  const COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#F97316", "#06B6D4", "#84CC16"];
 
-  console.log("💰 SpendingOverviewMobile received data:", categoryData);
+  const COLORS = [
+    "#3B82F6",
+    "#10B981",
+    "#F59E0B",
+    "#EF4444",
+    "#8B5CF6",
+    "#F97316",
+    "#06B6D4",
+    "#84CC16",
+  ];
 
   // Ensure we have valid data
-  if (!categoryData || !Array.isArray(categoryData) || categoryData.length === 0) {
+  if (
+    !categoryData ||
+    !Array.isArray(categoryData) ||
+    categoryData.length === 0
+  ) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
         <PieChartIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
         <p className="text-gray-500 mb-2">No spending data available</p>
-        <p className="text-sm text-gray-400">Add some transactions to see your spending breakdown</p>
+        <p className="text-sm text-gray-400">
+          Add some transactions to see your spending breakdown
+        </p>
       </div>
     );
   }
@@ -24,11 +51,11 @@ const SpendingOverviewMobile = ({ categoryData, formatCurrency }) => {
   // FIX: Flexible property mapping to handle different data structures
   const normalizeCategory = (cat) => {
     return {
-      category: cat._id || cat.category || 'Unknown',
+      category: cat._id || cat.category || "Unknown",
       // Try multiple possible property names for amount
       amount: cat.totalAmount || cat.amount || cat.total || 0,
       // Try multiple possible property names for count
-      count: cat.transactionCount || cat.count || 0
+      count: cat.transactionCount || cat.count || 0,
     };
   };
 
@@ -38,14 +65,12 @@ const SpendingOverviewMobile = ({ categoryData, formatCurrency }) => {
 
   const chartData = topCategories.map((cat, index) => ({
     category: cat.category,
-    amount: cat.amount,  // FIX: Use consistent property name
+    amount: cat.amount, // FIX: Use consistent property name
     count: cat.count,
-    percentage: totalSpent > 0 ? ((cat.amount / totalSpent) * 100).toFixed(1) : 0,
-    color: COLORS[index % COLORS.length]
+    percentage:
+      totalSpent > 0 ? ((cat.amount / totalSpent) * 100).toFixed(1) : 0,
+    color: COLORS[index % COLORS.length],
   }));
-
-  console.log("📊 Chart data processed:", chartData);
-  console.log("📊 Total spent:", totalSpent);
 
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
@@ -56,29 +81,34 @@ const SpendingOverviewMobile = ({ categoryData, formatCurrency }) => {
           <p className="text-sm text-gray-600">
             {formatCurrency(data.amount)} ({data.percentage}%)
           </p>
-          <p className="text-xs text-gray-500">
-            {data.count} transactions
-          </p>
+          <p className="text-xs text-gray-500">{data.count} transactions</p>
         </div>
       );
     }
     return null;
   };
 
-  const CustomLabelList = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+  const CustomLabelList = ({
+    cx,
+    cy,
+    midAngle,
+    innerRadius,
+    outerRadius,
+    percent,
+  }) => {
     if (percent < 0.05) return null; // Don't show labels for slices < 5%
-    
+
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
     return (
-      <text 
-        x={x} 
-        y={y} 
-        fill="white" 
-        textAnchor={x > cx ? 'start' : 'end'} 
+      <text
+        x={x}
+        y={y}
+        fill="white"
+        textAnchor={x > cx ? "start" : "end"}
         dominantBaseline="central"
         fontSize="10"
         fontWeight="bold"
@@ -160,7 +190,10 @@ const SpendingOverviewMobile = ({ categoryData, formatCurrency }) => {
             {/* Legend */}
             <div className="grid grid-cols-2 gap-3">
               {chartData.map((cat, index) => (
-                <div key={`${cat.category}-${index}`} className="flex items-center">
+                <div
+                  key={`${cat.category}-${index}`}
+                  className="flex items-center"
+                >
                   <div
                     className="w-3 h-3 rounded-full mr-2 flex-shrink-0"
                     style={{ backgroundColor: cat.color }}
@@ -169,9 +202,7 @@ const SpendingOverviewMobile = ({ categoryData, formatCurrency }) => {
                     <p className="text-xs font-medium text-gray-900 truncate">
                       {cat.category}
                     </p>
-                    <p className="text-xs text-gray-500">
-                      {cat.percentage}%
-                    </p>
+                    <p className="text-xs text-gray-500">{cat.percentage}%</p>
                   </div>
                 </div>
               ))}
@@ -182,18 +213,25 @@ const SpendingOverviewMobile = ({ categoryData, formatCurrency }) => {
             {/* Bar Chart - FIX: Changed dataKey from totalAmount to amount */}
             <div className="h-48 mb-4">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                  <XAxis 
-                    dataKey="category" 
+                <BarChart
+                  data={chartData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                >
+                  <XAxis
+                    dataKey="category"
                     tick={{ fontSize: 10 }}
                     interval={0}
                     angle={-45}
                     textAnchor="end"
                     height={60}
                   />
-                  <YAxis 
+                  <YAxis
                     tick={{ fontSize: 10 }}
-                    tickFormatter={(value) => `₹${value >= 1000 ? (value/1000).toFixed(0) + 'K' : value}`}
+                    tickFormatter={(value) =>
+                      `₹${
+                        value >= 1000 ? (value / 1000).toFixed(0) + "K" : value
+                      }`
+                    }
                   />
                   <Tooltip content={<CustomTooltip />} />
                   <Bar dataKey="amount" fill="#3B82F6" radius={[4, 4, 0, 0]} />
@@ -204,7 +242,10 @@ const SpendingOverviewMobile = ({ categoryData, formatCurrency }) => {
             {/* Category List */}
             <div className="space-y-3">
               {chartData.map((cat, index) => (
-                <div key={`${cat.category}-${index}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div
+                  key={`${cat.category}-${index}`}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                >
                   <div className="flex items-center flex-1">
                     <div
                       className="w-4 h-4 rounded-full mr-3 flex-shrink-0"
@@ -223,9 +264,7 @@ const SpendingOverviewMobile = ({ categoryData, formatCurrency }) => {
                     <p className="text-sm font-semibold text-gray-900">
                       {formatCurrency(cat.amount)}
                     </p>
-                    <p className="text-xs text-gray-500">
-                      {cat.percentage}%
-                    </p>
+                    <p className="text-xs text-gray-500">{cat.percentage}%</p>
                   </div>
                 </div>
               ))}
@@ -236,7 +275,9 @@ const SpendingOverviewMobile = ({ categoryData, formatCurrency }) => {
         {/* Total Spending */}
         <div className="mt-4 pt-4 border-t border-gray-100">
           <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-600">Total Spending (Top 6)</span>
+            <span className="text-sm font-medium text-gray-600">
+              Total Spending (Top 6)
+            </span>
             <span className="text-lg font-bold text-gray-900">
               {formatCurrency(totalSpent)}
             </span>

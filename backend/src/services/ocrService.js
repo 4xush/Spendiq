@@ -51,8 +51,6 @@ class OCRService {
         let worker = null
 
         try {
-            console.log('🔍 Starting OCR processing for:', imagePath)
-
             // Check if file exists and is readable
             if (!fs.existsSync(imagePath)) {
                 throw new Error('Image file does not exist')
@@ -70,34 +68,20 @@ class OCRService {
                 throw new Error('Image file appears to be corrupted (file too small)')
             }
 
-            console.log(`📁 File size: ${fileSizeInMB.toFixed(2)}MB`)
-
             // Basic file format validation
             const extension = path.extname(imagePath).toLowerCase()
             const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
             if (!allowedExtensions.includes(extension)) {
                 throw new Error('Unsupported image format')
             }
-
-            console.log('📋 File validation passed, creating Tesseract worker...')
-
             // Create and properly initialize a fresh worker for each request
             worker = await Tesseract.createWorker()
-            console.log('🔧 Worker created, loading engine...')
-
             await worker.load()
-            console.log('🔧 Engine loaded, loading language...')
-
             await worker.loadLanguage('eng')
-            console.log('🔧 Language loaded, initializing...')
-
             await worker.initialize('eng')
-            console.log('✅ Worker fully initialized')
-
             // Test file readability
             try {
                 const fileBuffer = fs.readFileSync(imagePath)
-                console.log(`📄 File read successfully, buffer size: ${fileBuffer.length} bytes`)
             } catch (readError) {
                 console.error(' Cannot read file:', readError)
                 throw new Error('Cannot read image file: ' + readError.message)
@@ -107,9 +91,7 @@ class OCRService {
             const ocrResult = await Promise.race([
                 (async () => {
                     try {
-                        console.log('📊 Starting OCR recognition...')
                         const result = await worker.recognize(imagePath)
-                        console.log('� OCR recognition completed successfully')
                         return result.data.text
                     } catch (recognizeError) {
                         console.error('🚨 OCR recognition error details:')
@@ -130,8 +112,6 @@ class OCRService {
                     setTimeout(() => reject(new Error('OCR processing timed out')), 60000)
                 )
             ])
-
-            console.log('✅ OCR processing completed successfully')
             return ocrResult
 
         } catch (error) {

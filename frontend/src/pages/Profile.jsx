@@ -1,5 +1,12 @@
 import { useState, useEffect } from "react";
-import { User, Save, Settings, Shield, Calendar, CheckCircle } from "lucide-react";
+import {
+  User,
+  Save,
+  Settings,
+  Shield,
+  Calendar,
+  CheckCircle,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
 import api from "../utils/api";
@@ -16,6 +23,27 @@ function Profile() {
       timezone: "UTC",
     },
   });
+
+  // Helper function to safely parse dates from MongoDB
+  const parseMongoDate = (dateString) => {
+    if (!dateString) return null;
+
+    try {
+      // Handle MongoDB ISO date format: 2025-10-07T23:11:11.300+00:00
+      const date = new Date(dateString);
+
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        console.warn("Invalid date received:", dateString);
+        return null;
+      }
+
+      return date;
+    } catch (error) {
+      console.error("Error parsing date:", error, dateString);
+      return null;
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -78,10 +106,15 @@ function Profile() {
     );
   }
 
-  const memberSince = new Date(user.createdAt).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-  });
+  const memberSince = (() => {
+    const date = parseMongoDate(user?.createdAt);
+    if (!date) return "Unknown";
+
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+    });
+  })();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -105,7 +138,7 @@ function Profile() {
                 {user.name}
               </h1>
               <p className="text-sm text-gray-500 mb-3">{user.email}</p>
-              
+
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
                 <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-medium">
                   <CheckCircle className="h-3.5 w-3.5" />
@@ -205,10 +238,10 @@ function Profile() {
                       onChange={handleChange}
                       style={{
                         backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
-                        backgroundPosition: 'right 0.75rem center',
-                        backgroundRepeat: 'no-repeat',
-                        backgroundSize: '1.25em 1.25em',
-                        paddingRight: '2.5rem'
+                        backgroundPosition: "right 0.75rem center",
+                        backgroundRepeat: "no-repeat",
+                        backgroundSize: "1.25em 1.25em",
+                        paddingRight: "2.5rem",
                       }}
                     >
                       <option value="INR">🇮🇳 Indian Rupee</option>
@@ -236,17 +269,21 @@ function Profile() {
                       onChange={handleChange}
                       style={{
                         backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
-                        backgroundPosition: 'right 0.75rem center',
-                        backgroundRepeat: 'no-repeat',
-                        backgroundSize: '1.25em 1.25em',
-                        paddingRight: '2.5rem'
+                        backgroundPosition: "right 0.75rem center",
+                        backgroundRepeat: "no-repeat",
+                        backgroundSize: "1.25em 1.25em",
+                        paddingRight: "2.5rem",
                       }}
                     >
                       <option value="UTC">UTC</option>
-                      <option value="America/New_York">Eastern Time (US)</option>
+                      <option value="America/New_York">
+                        Eastern Time (US)
+                      </option>
                       <option value="America/Chicago">Central Time (US)</option>
                       <option value="America/Denver">Mountain Time (US)</option>
-                      <option value="America/Los_Angeles">Pacific Time (US)</option>
+                      <option value="America/Los_Angeles">
+                        Pacific Time (US)
+                      </option>
                       <option value="Europe/London">London</option>
                       <option value="Europe/Paris">Paris</option>
                       <option value="Asia/Tokyo">Tokyo</option>
@@ -294,8 +331,9 @@ function Profile() {
                     Security Notice
                   </h3>
                   <p className="text-xs text-amber-800 leading-relaxed">
-                    To change your password or email address, please contact support. 
-                    We require additional verification for sensitive changes.
+                    To change your password or email address, please contact
+                    support. We require additional verification for sensitive
+                    changes.
                   </p>
                 </div>
               </div>
@@ -310,15 +348,22 @@ function Profile() {
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <span className="text-xs text-gray-600">Member Since</span>
                   <span className="text-sm font-semibold text-gray-900">
-                    {new Date(user.createdAt).toLocaleDateString("en-US", {
-                      month: "short",
-                      year: "numeric",
-                    })}
+                    {(() => {
+                      const date = parseMongoDate(user?.createdAt);
+                      if (!date) return "Unknown";
+
+                      return date.toLocaleDateString("en-US", {
+                        month: "short",
+                        year: "numeric",
+                      });
+                    })()}
                   </span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <span className="text-xs text-gray-600">Account Type</span>
-                  <span className="text-sm font-semibold text-gray-900">Free</span>
+                  <span className="text-sm font-semibold text-gray-900">
+                    Free
+                  </span>
                 </div>
               </div>
             </div>

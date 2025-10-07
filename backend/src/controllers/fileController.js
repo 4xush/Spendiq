@@ -71,7 +71,6 @@ async function processReceiptAsync(receiptId, filePath, userId) {
     // Wrap in additional error protection
     const processWithErrorProtection = async () => {
         try {
-            console.log(`🔄 Processing receipt ${receiptId} for user ${userId}`)
 
             // Extract text using OCR with timeout
             const rawText = await Promise.race([
@@ -83,12 +82,10 @@ async function processReceiptAsync(receiptId, filePath, userId) {
 
             const cleanText = ocrService.cleanOCRText(rawText)
 
-            console.log(`📝 OCR extracted ${cleanText.length} characters`)
 
             // Analyze with Gemini AI using retry logic
             const extractedData = await getGeminiService().analyzeReceiptWithRetry(cleanText)
 
-            console.log(`🤖 Gemini analysis completed with confidence: ${extractedData.confidence}`)
 
             // Update receipt with extracted data
             const receipt = await Receipt.findByIdAndUpdate(
@@ -127,12 +124,9 @@ async function processReceiptAsync(receiptId, filePath, userId) {
                 receipt.transactionId = transaction._id
                 await receipt.save()
 
-                console.log(`💰 Transaction created with ID: ${transaction._id}`)
             } else {
-                console.log(`⚠️ Transaction not created - low confidence (${extractedData.confidence}) or missing amount`)
             }
 
-            console.log(`✅ Receipt processing completed successfully`)
 
         } catch (error) {
             console.error(' Receipt processing error:', error.message)
@@ -179,7 +173,6 @@ async function processReceiptAsync(receiptId, filePath, userId) {
                         type: error.name || 'ProcessingError'
                     }
                 })
-                console.log(`📝 Receipt ${receiptId} marked as failed with error: ${userMessage}`)
             } catch (dbError) {
                 console.error(' Failed to update receipt status in database:', dbError)
             }
@@ -220,7 +213,6 @@ export const processPDF = async (req, res) => {
         const userId = req.user._id
         const file = req.file
 
-        console.log(`🔍 Validating file: ${file.originalname} (${file.mimetype})`)
 
         // Validate PDF file
         if (file.mimetype !== 'application/pdf') {
@@ -230,30 +222,18 @@ export const processPDF = async (req, res) => {
             })
         }
 
-        console.log('✅ File validation passed')
 
         // Extract text from PDF
-        console.log('📄 Starting PDF text extraction...')
         const pdfData = await pdfService.extractTextFromPDF(file.path)
-
-        console.log(`📊 Extraction complete:`, {
-            method: pdfData.extractionMethod,
-            textLength: pdfData.text.length,
-            pages: pdfData.pages
-        })
-
         if (!pdfData.text || pdfData.text.trim().length < 10) {
-            console.log('⚠️ Warning: Very little text extracted from PDF')
         }
 
         // Parse transactions using AI with retry logic
-        console.log('🤖 Analyzing bank statement with AI...')
         const extractedTransactions = await getGeminiService().analyzeBankStatementWithRetry(pdfData.text)
 
         // Clean up uploaded file
         fs.unlinkSync(file.path)
 
-        console.log(`✅ PDF analysis complete. Found ${extractedTransactions.length} transactions`)
 
         res.json({
             message: `Successfully processed PDF and found ${extractedTransactions.length} transactions`,
@@ -303,7 +283,6 @@ export const processImage = async (req, res) => {
         const userId = req.user._id
         const file = req.file
 
-        console.log(`🔍 Validating image: ${file.originalname} (${file.mimetype})`)
 
         // Validate image file
         const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png']
@@ -314,29 +293,18 @@ export const processImage = async (req, res) => {
             })
         }
 
-        console.log('✅ File validation passed')
 
         // Extract text from image using OCR
-        console.log('📄 Starting image text extraction...')
         const extractedText = await ocrService.extractTextFromImage(file.path)
-
-        console.log(`📊 Extraction complete:`, {
-            method: 'ocr',
-            textLength: extractedText.length
-        })
-
         if (!extractedText || extractedText.trim().length < 10) {
-            console.log('⚠️ Warning: Very little text extracted from image')
         }
 
         // Parse transactions using AI with retry logic
-        console.log('🤖 Analyzing bank statement image with AI...')
         const extractedTransactions = await getGeminiService().analyzeBankStatementWithRetry(extractedText)
 
         // Clean up uploaded file
         fs.unlinkSync(file.path)
 
-        console.log(`✅ Image analysis complete. Found ${extractedTransactions.length} transactions`)
 
         res.json({
             message: `Successfully processed image and found ${extractedTransactions.length} transactions`,

@@ -11,9 +11,7 @@ class PDFService {
     // Extract text from PDF file with OCR fallback
     async extractTextFromPDF(pdfPath) {
         try {
-            console.log('📄 Starting PDF text extraction...')
-            console.log('🔧 Starting PDF text extraction for:', path.basename(pdfPath))
-
+            
             // First, try to extract text directly from PDF
             const pdfBuffer = fs.readFileSync(pdfPath)
             let pdfData
@@ -21,21 +19,13 @@ class PDFService {
             try {
                 pdfData = await pdfParse(pdfBuffer)
             } catch (parseError) {
-                console.log('⚠️ Direct PDF parsing failed, falling back to OCR immediately')
                 return await this.extractTextWithOCR(pdfPath)
             }
-
-            console.log('📄 PDF Info:', {
-                pages: pdfData.numpages,
-                textLength: pdfData.text.length
-            })
-
             // Check if we got meaningful text (more than just whitespace and minimal content)
             const cleanText = pdfData.text.trim().replace(/\s+/g, ' ')
             const hasSelectableText = cleanText.length > 50 && /[a-zA-Z0-9]/.test(cleanText)
 
             if (hasSelectableText) {
-                console.log('✅ Successfully extracted selectable text from PDF')
                 return {
                     text: pdfData.text,
                     pages: pdfData.numpages,
@@ -43,9 +33,6 @@ class PDFService {
                     extractionMethod: 'direct'
                 }
             }
-
-            console.log('⚠️ PDF appears to be scanned or has minimal text. Falling back to OCR...')
-
             // Fallback to OCR if text extraction failed or returned minimal content
             const ocrText = await this.extractTextWithOCR(pdfPath)
 
@@ -61,7 +48,6 @@ class PDFService {
 
             // If direct extraction failed, try OCR as last resort
             try {
-                console.log('🔄 Direct extraction failed, attempting OCR fallback...')
                 const ocrText = await this.extractTextWithOCR(pdfPath)
                 return {
                     text: ocrText,
@@ -81,8 +67,6 @@ class PDFService {
         const tempImagePaths = []
 
         try {
-            console.log('🔍 Converting PDF pages to images for OCR...')
-
             // Convert PDF to PNG images using pdf-to-png-converter (pure JS, no system deps)
             const pngPages = await pdfToPng(pdfPath, {
                 disableFontFace: false,
@@ -93,16 +77,11 @@ class PDFService {
                 strictPagesToProcess: false,
                 verbosityLevel: 0
             })
-
-            console.log(`📸 Converted ${pngPages.length} pages to images`)
-
             let combinedText = ''
 
             // Process each page with Tesseract.js OCR (pure JavaScript)
             for (let i = 0; i < pngPages.length; i++) {
                 try {
-                    console.log(`🔍 Processing page ${i + 1}/${pngPages.length} with OCR...`)
-
                     const page = pngPages[i]
                     const imagePath = page.path
 
@@ -119,15 +98,13 @@ class PDFService {
                         {
                             logger: info => {
                                 if (info.status === 'recognizing text') {
-                                    console.log(`   Progress: ${Math.round(info.progress * 100)}%`)
-                                }
+                                                                    }
                             }
                         }
                     )
 
                     combinedText += `\n--- Page ${i + 1} ---\n${text}\n`
-                    console.log(`✅ Page ${i + 1} OCR completed (${text.length} chars)`)
-
+                    
                 } catch (pageError) {
                     console.error(`❌ Failed to process page ${i + 1}:`, pageError.message)
                     // Continue with next page
@@ -140,8 +117,6 @@ class PDFService {
             if (!combinedText.trim()) {
                 throw new Error('No text could be extracted from any page')
             }
-
-            console.log(`✅ OCR completed. Extracted ${combinedText.length} characters from ${pngPages.length} pages`)
             return combinedText.trim()
 
         } catch (error) {
@@ -158,8 +133,7 @@ class PDFService {
             try {
                 if (fs.existsSync(filePath)) {
                     fs.unlinkSync(filePath)
-                    console.log(`🗑️ Cleaned up: ${path.basename(filePath)}`)
-                }
+                                    }
             } catch (error) {
                 console.error(`⚠️ Failed to cleanup ${filePath}:`, error.message)
             }

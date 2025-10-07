@@ -10,7 +10,13 @@ import {
 } from "lucide-react";
 
 // Reusable Components
-const ActionButton = ({ onClick, icon: Icon, variant = "blue", children, disabled }) => {
+const ActionButton = ({
+  onClick,
+  icon: Icon,
+  variant = "blue",
+  children,
+  disabled,
+}) => {
   const variants = {
     blue: "bg-blue-100 text-blue-700 hover:bg-blue-200",
     green: "bg-green-100 text-green-700 hover:bg-green-200",
@@ -32,10 +38,18 @@ const ActionButton = ({ onClick, icon: Icon, variant = "blue", children, disable
 
 const NavigationButtons = ({ navigate }) => (
   <div className="flex flex-wrap gap-2">
-    <ActionButton onClick={() => navigate("/transactions")} icon={Eye} variant="green">
+    <ActionButton
+      onClick={() => navigate("/transactions")}
+      icon={Eye}
+      variant="green"
+    >
       View Transactions
     </ActionButton>
-    <ActionButton onClick={() => navigate("/analytics")} icon={TrendingUp} variant="blue">
+    <ActionButton
+      onClick={() => navigate("/analytics")}
+      icon={TrendingUp}
+      variant="blue"
+    >
       Analytics
     </ActionButton>
   </div>
@@ -60,8 +74,12 @@ const ProgressBar = ({ current, total }) => {
 
 const DataField = ({ label, value }) => (
   <div>
-    <span className="font-medium text-gray-700 text-xs sm:text-sm">{label}:</span>
-    <span className="ml-2 text-gray-600 text-xs sm:text-sm">{value || "N/A"}</span>
+    <span className="font-medium text-gray-700 text-xs sm:text-sm">
+      {label}:
+    </span>
+    <span className="ml-2 text-gray-600 text-xs sm:text-sm">
+      {value || "N/A"}
+    </span>
   </div>
 );
 
@@ -107,7 +125,9 @@ const UploadResults = ({
 
     return (
       <div className="mt-4 p-3 sm:p-4 bg-white rounded-xl border border-green-200">
-        <h4 className="font-medium text-green-800 text-sm mb-3">📄 Receipt Data</h4>
+        <h4 className="font-medium text-green-800 text-sm mb-3">
+          📄 Receipt Data
+        </h4>
 
         <div className="grid sm:grid-cols-2 gap-2 sm:gap-3 mb-3">
           <DataField label="Merchant" value={data.merchant} />
@@ -121,10 +141,14 @@ const UploadResults = ({
             <span className="font-medium text-gray-700 text-xs">Items:</span>
             <div className="mt-1 text-xs text-gray-600 space-y-0.5">
               {data.items.slice(0, 3).map((item, idx) => (
-                <div key={idx}>• {item.name} (${item.price})</div>
+                <div key={idx}>
+                  • {item.name} (${item.price})
+                </div>
               ))}
               {data.items.length > 3 && (
-                <div className="text-gray-500">... and {data.items.length - 3} more</div>
+                <div className="text-gray-500">
+                  ... and {data.items.length - 3} more
+                </div>
               )}
             </div>
           </div>
@@ -132,14 +156,22 @@ const UploadResults = ({
 
         <div className="flex flex-col gap-2">
           {result.transaction ? (
-            <ActionButton onClick={() => navigate("/transactions")} icon={Eye} variant="green">
+            <ActionButton
+              onClick={() => navigate("/transactions")}
+              icon={Eye}
+              variant="green"
+            >
               View Transaction
             </ActionButton>
           ) : (
             <>
               <ActionButton
                 onClick={() =>
-                  showTransactionConfirmation(data, result.receiptId || result.id, "receipt")
+                  showTransactionConfirmation(
+                    data,
+                    result.receiptId || result.id,
+                    "receipt"
+                  )
                 }
                 icon={Edit3}
                 variant="blue"
@@ -149,7 +181,9 @@ const UploadResults = ({
 
               <div className="grid sm:grid-cols-2 gap-2">
                 <ActionButton
-                  onClick={() => onQuickAdd?.(data, result.receiptId || result.id, "receipt")}
+                  onClick={() =>
+                    onQuickAdd?.(data, result.receiptId || result.id, "receipt")
+                  }
                   icon={CheckCircle}
                   variant="greenSolid"
                   disabled={creatingTransaction}
@@ -158,7 +192,9 @@ const UploadResults = ({
                 </ActionButton>
 
                 <ActionButton
-                  onClick={() => onQuickSkip?.(result.receiptId || result.id, "receipt")}
+                  onClick={() =>
+                    onQuickSkip?.(result.receiptId || result.id, "receipt")
+                  }
                   icon={AlertCircle}
                   variant="graySolid"
                   disabled={creatingTransaction}
@@ -185,7 +221,8 @@ const UploadResults = ({
     }
 
     const current = getCurrentTransaction(result);
-    const isMultiple = Array.isArray(result.extractedData) && result.extractedData.length > 1;
+    const isMultiple =
+      Array.isArray(result.extractedData) && result.extractedData.length > 1;
     const totalCount = isMultiple ? result.extractedData.length : 1;
     const createdCount = result.createdTransactions?.length || 0;
     const remaining = getRemainingCount(result);
@@ -196,7 +233,12 @@ const UploadResults = ({
           <h4 className="font-medium text-blue-800 text-sm">
             📊 {result.type.toUpperCase()} Results
           </h4>
-          {isMultiple && <ProgressBar current={createdCount} total={totalCount + createdCount} />}
+          {isMultiple && (
+            <ProgressBar
+              current={createdCount}
+              total={totalCount + createdCount}
+            />
+          )}
         </div>
 
         <div className="space-y-2 mb-3">
@@ -208,20 +250,27 @@ const UploadResults = ({
           {createdCount > 0 && (
             <div className="flex justify-between text-xs sm:text-sm">
               <span className="font-medium text-green-700">Created:</span>
-              <span className="font-semibold text-green-600">{createdCount}</span>
+              <span className="font-semibold text-green-600">
+                {createdCount}
+              </span>
             </div>
           )}
         </div>
 
         {current && (
           <div className="p-3 bg-blue-50 rounded-lg mb-3">
-            <h5 className="font-medium text-blue-900 text-xs mb-2">Preview (First):</h5>
+            <h5 className="font-medium text-blue-900 text-xs mb-2">
+              Preview (First):
+            </h5>
             <div className="grid sm:grid-cols-2 gap-2">
               <DataField
                 label="Description"
                 value={current.description || current.merchant}
               />
-              <DataField label="Amount" value={`$${current.amount || "0.00"}`} />
+              <DataField
+                label="Amount"
+                value={`$${current.amount || "0.00"}`}
+              />
             </div>
           </div>
         )}
@@ -229,11 +278,14 @@ const UploadResults = ({
         <div className="space-y-2">
           <div className="flex flex-wrap gap-2">
             <ActionButton
-              onClick={() => showTransactionConfirmation(current, result.id, result.type)}
+              onClick={() =>
+                showTransactionConfirmation(current, result.id, result.type)
+              }
               icon={Edit3}
               variant="blue"
             >
-              Review {isMultiple && `(${createdCount}/${createdCount + totalCount})`}
+              Review{" "}
+              {isMultiple && `(${createdCount}/${createdCount + totalCount})`}
             </ActionButton>
 
             {isMultiple && (
@@ -275,7 +327,9 @@ const UploadResults = ({
               variant="blue"
               disabled={creatingTransaction}
             >
-              {creatingTransaction ? "Adding All..." : `✓ Confirm All (${totalCount})`}
+              {creatingTransaction
+                ? "Adding All..."
+                : `✓ Confirm All (${totalCount})`}
             </ActionButton>
           )}
         </div>
@@ -286,8 +340,9 @@ const UploadResults = ({
   // Render completed status (all transactions created)
   const renderCompleted = (result) => {
     const hasCreated = result.createdTransactions?.length > 0;
-    const hasSingleTransaction = result.transaction && !result.createdTransactions;
-    
+    const hasSingleTransaction =
+      result.transaction && !result.createdTransactions;
+
     if (
       result.status !== "completed" ||
       result.needsConfirmation ||
@@ -296,8 +351,10 @@ const UploadResults = ({
       return null;
     }
 
-    const count = result.createdTransactions?.length || (hasSingleTransaction ? 1 : result.transactionsCreated || 0);
-    
+    const count =
+      result.createdTransactions?.length ||
+      (hasSingleTransaction ? 1 : result.transactionsCreated || 0);
+
     if (count === 0) return null;
 
     return (
@@ -306,7 +363,9 @@ const UploadResults = ({
           ✅ {result.type?.toUpperCase() || "Processing"} Complete
         </h4>
         <div className="flex justify-between items-center text-xs sm:text-sm mb-3">
-          <span className="font-medium text-gray-700">Transactions Created:</span>
+          <span className="font-medium text-gray-700">
+            Transactions Created:
+          </span>
           <span className="font-semibold text-green-600">{count}</span>
         </div>
         <NavigationButtons navigate={navigate} />
@@ -335,10 +394,14 @@ const UploadResults = ({
           ❌ {typeLabels[result.type] || "Processing Failed"}
         </p>
         <p className="text-red-700 text-xs sm:text-sm">
-          {result.error || "Processing failed. Please try again."}
+          {typeof result.error === "object" && result.error?.message
+            ? result.error.message
+            : result.error || "Processing failed. Please try again."}
         </p>
         {tips[result.type] && (
-          <div className="mt-2 text-xs text-red-600">💡 Tip: Ensure your {tips[result.type]}.</div>
+          <div className="mt-2 text-xs text-red-600">
+            💡 Tip: Ensure your {tips[result.type]}.
+          </div>
         )}
       </div>
     );
@@ -346,7 +409,9 @@ const UploadResults = ({
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6">
-      <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Recent Uploads</h3>
+      <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
+        Recent Uploads
+      </h3>
       <div className="space-y-3">
         {uploadResults.map((result) => (
           <div
