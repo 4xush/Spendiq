@@ -33,7 +33,7 @@ lib-cov/
 coverage/
 
 # Optional: ignore local GitHub or config files
-# .github/
+.github/
 
 
 uploads/

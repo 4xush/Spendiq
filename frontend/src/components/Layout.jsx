@@ -51,7 +51,7 @@ function Layout({ children }) {
             <div className="flex items-center">
               <IndianRupee className="h-8 w-8 text-primary-500" />
               <span className="ml-2 text-xl font-bold text-gray-900">
-                SpendSense
+                Spendiq
               </span>
             </div>
             <button
@@ -117,7 +117,7 @@ function Layout({ children }) {
           <div className="flex h-16 shrink-0 items-center px-6 border-b border-gray-200">
             <IndianRupee className="h-8 w-8 text-primary-500" />
             <span className="ml-2 text-xl font-bold text-gray-900">
-              SpendSense
+              Spendiq
             </span>
           </div>
           <nav className="flex-1 px-4 py-6">
@@ -185,7 +185,7 @@ function Layout({ children }) {
             <div className="flex items-center">
               <IndianRupee className="h-8 w-8 text-primary-500" />
               <span className="ml-2 text-xl font-bold text-gray-900">
-                SpendSense
+                Spendiq
               </span>
             </div>
           </div>
