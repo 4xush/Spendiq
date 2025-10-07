@@ -48,6 +48,35 @@ export const transactionValidation = [
         .withMessage('Invalid P2P type')
 ]
 
+// Bulk delete validation
+export const bulkDeleteValidation = [
+    body('transactionIds')
+        .isArray({ min: 1 })
+        .withMessage('Transaction IDs must be a non-empty array'),
+    body('transactionIds.*')
+        .isMongoId()
+        .withMessage('Each transaction ID must be a valid MongoDB ObjectId'),
+    body('dateRange')
+        .optional()
+        .isObject()
+        .withMessage('Date range must be an object'),
+    body('dateRange.startDate')
+        .optional()
+        .isISO8601()
+        .withMessage('Start date must be a valid ISO 8601 date'),
+    body('dateRange.endDate')
+        .optional()
+        .isISO8601()
+        .withMessage('End date must be a valid ISO 8601 date'),
+    body('deleteType')
+        .isIn(['selected', 'dateRange', 'lastDays'])
+        .withMessage('Delete type must be selected, dateRange, or lastDays'),
+    body('lastDays')
+        .optional()
+        .isInt({ min: 1, max: 365 })
+        .withMessage('Last days must be between 1 and 365')
+]
+
 // List transactions validation
 export const listValidation = [
     query('page')
@@ -253,7 +282,7 @@ export const updateTransaction = async (req, res) => {
     }
 }
 
-// Delete transaction
+// Delete single transaction
 export const deleteTransaction = async (req, res) => {
     try {
         const { id } = req.params
@@ -274,6 +303,101 @@ export const deleteTransaction = async (req, res) => {
         console.error('Delete transaction error:', error)
         res.status(500).json({
             error: 'Failed to delete transaction'
+        })
+    }
+}
+
+// Bulk delete transactions
+export const bulkDeleteTransactions = async (req, res) => {
+    try {
+        const errors = validationResult(req)
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                error: 'Validation failed',
+                details: errors.array()
+            })
+        }
+
+        const userId = req.user._id
+        const { deleteType, transactionIds, dateRange, lastDays } = req.body
+
+        let query = { userId }
+        let deletedCount = 0
+
+        switch (deleteType) {
+            case 'selected':
+                if (!transactionIds || transactionIds.length === 0) {
+                    return res.status(400).json({
+                        error: 'Transaction IDs are required for selected delete type'
+                    })
+                }
+                query._id = { $in: transactionIds }
+                break
+
+            case 'dateRange':
+                if (!dateRange || !dateRange.startDate || !dateRange.endDate) {
+                    return res.status(400).json({
+                        error: 'Start date and end date are required for date range delete'
+                    })
+                }
+                const startDate = new Date(dateRange.startDate)
+                const endDate = new Date(dateRange.endDate)
+                startDate.setHours(0, 0, 0, 0)
+                endDate.setHours(23, 59, 59, 999)
+                
+                query.date = {
+                    $gte: startDate,
+                    $lte: endDate
+                }
+                break
+
+            case 'lastDays':
+                if (!lastDays || lastDays < 1) {
+                    return res.status(400).json({
+                        error: 'Number of days is required for last days delete'
+                    })
+                }
+                const cutoffDate = new Date()
+                cutoffDate.setDate(cutoffDate.getDate() - lastDays)
+                cutoffDate.setHours(0, 0, 0, 0)
+                
+                query.date = { $gte: cutoffDate }
+                break
+
+            default:
+                return res.status(400).json({
+                    error: 'Invalid delete type'
+                })
+        }
+
+        // First, get the transactions that will be deleted for logging
+        const transactionsToDelete = await Transaction.find(query).select('_id amount category date description')
+        
+        if (transactionsToDelete.length === 0) {
+            return res.status(404).json({
+                error: 'No transactions found matching the criteria'
+            })
+        }
+
+        // Perform the bulk delete
+        const result = await Transaction.deleteMany(query)
+        deletedCount = result.deletedCount
+
+        res.json({
+            message: `Successfully deleted ${deletedCount} transaction(s)`,
+            deletedCount,
+            deletedTransactions: transactionsToDelete.map(t => ({
+                id: t._id,
+                amount: t.amount,
+                category: t.category,
+                date: t.date,
+                description: t.description
+            }))
+        })
+    } catch (error) {
+        console.error('Bulk delete transactions error:', error)
+        res.status(500).json({
+            error: 'Failed to delete transactions'
         })
     }
 }

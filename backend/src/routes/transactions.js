@@ -5,7 +5,9 @@ import {
     getTransaction,
     updateTransaction,
     deleteTransaction,
+    bulkDeleteTransactions,
     transactionValidation,
+    bulkDeleteValidation,
     listValidation,
     createP2PTransaction,
     getP2PTransactions,
@@ -28,6 +30,9 @@ router.post('/p2p', createP2PTransaction)
 router.get('/p2p', getP2PTransactions)
 router.get('/p2p/summary', getP2PSummary)
 router.patch('/p2p/:id/status', updateP2PStatus)
+
+// Bulk operations (must come before parameterized routes)
+router.delete('/bulk', bulkDeleteValidation, bulkDeleteTransactions)
 
 // Regular transaction routes
 router.post('/', transactionValidation, createTransaction)

@@ -1,453 +1,438 @@
 import { useState, useEffect } from "react";
-import { Plus, Calendar } from "lucide-react";
-import api from "../utils/api";
-import LoadingSpinner from "../components/LoadingSpinner";
-import toast from "react-hot-toast";
-
-// Import modular components
-import TransactionForm from "./Transaction/TransactionForm";
-import TransactionFilters from "./Transaction/TransactionFilters";
-import TransactionTable from "./Transaction/TransactionTable";
+import api, { bulkDeleteTransactions } from "../utils/api";
 import TransactionCard from "./Transaction/TransactionCard";
+import TransactionTable from "./Transaction/TransactionTable";
+import TransactionFilters from "./Transaction/TransactionFilters";
+import TransactionForm from "./Transaction/TransactionForm";
 import TransactionDetailsModal from "./Transaction/TransactionDetailsModal";
 import EditTransactionModal from "./Transaction/EditTransactionModal";
 import DeleteConfirmModal from "./Transaction/DeleteConfirmModal";
+import BulkDeleteModal from "./Transaction/BulkDeleteModal";
+import LoadingSpinner from "../components/LoadingSpinner";
+import {
+  FaPlus,
+  FaTable,
+  FaTh,
+  FaTrash,
+  FaCheckSquare,
+  FaSquare,
+} from "react-icons/fa";
 
-function Transactions() {
+const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [viewMode, setViewMode] = useState("table"); // 'card' or 'table'
+  const [showForm, setShowForm] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [editingTransaction, setEditingTransaction] = useState(null);
+  const [deletingTransaction, setDeletingTransaction] = useState(null);
+  const [detailsTransaction, setDetailsTransaction] = useState(null);
   const [pagination, setPagination] = useState({});
   const [filters, setFilters] = useState({
     page: 1,
     limit: 20,
     type: "",
     category: "",
-    search: "",
     startDate: "",
     endDate: "",
+    search: "",
   });
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [showEditForm, setShowEditForm] = useState(false);
-  const [editingTransaction, setEditingTransaction] = useState(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deletingTransaction, setDeletingTransaction] = useState(null);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Bulk selection state
+  const [selectedTransactions, setSelectedTransactions] = useState([]);
+  const [bulkSelectMode, setBulkSelectMode] = useState(false);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
 
   useEffect(() => {
     fetchTransactions();
   }, [filters]);
 
-  // Handle escape key to close modals
-  useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === "Escape") {
-        if (showAddForm) setShowAddForm(false);
-        if (showEditForm) {
-          setShowEditForm(false);
-          setEditingTransaction(null);
-        }
-        if (showDeleteConfirm) {
-          setShowDeleteConfirm(false);
-          setDeletingTransaction(null);
-        }
-        if (showDetailsModal) {
-          setShowDetailsModal(false);
-          setSelectedTransaction(null);
-        }
-      }
-    };
-
-    document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
-  }, [showAddForm, showEditForm, showDeleteConfirm, showDetailsModal]);
-
   const fetchTransactions = async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      Object.keys(filters).forEach((key) => {
-        if (filters[key]) params.append(key, filters[key]);
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) {
+          params.append(key, value);
+        }
       });
 
       const response = await api.get(`/transactions?${params}`);
       setTransactions(response.data.transactions);
       setPagination(response.data.pagination);
-    } catch (error) {
-      console.error("Failed to fetch transactions:", error);
-      toast.error("Failed to load transactions");
+    } catch (err) {
+      setError("Failed to fetch transactions");
+      console.error("Fetch transactions error:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "INR",
-    }).format(amount);
+  const handlePageChange = (newPage) => {
+    setFilters((prev) => ({ ...prev, page: newPage }));
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
-  // Handle view transaction details
-  const handleViewTransaction = async (transaction) => {
+  const handleViewDetails = async (transaction) => {
     try {
       const response = await api.get(`/transactions/${transaction._id}`);
-      setSelectedTransaction(response.data.transaction);
-      setShowDetailsModal(true);
-    } catch (error) {
-      console.error("Failed to fetch transaction details:", error);
-      toast.error("Failed to load transaction details");
+      setDetailsTransaction(response.data.transaction);
+    } catch (err) {
+      console.error("Failed to fetch transaction details:", err);
     }
   };
 
-  // Handle edit transaction
-  const handleEditTransaction = (transaction) => {
+  const handleEdit = (transaction) => {
     setEditingTransaction(transaction);
-    setShowEditForm(true);
   };
 
-  // Handle delete transaction
-  const handleDeleteTransaction = (transaction) => {
+  const handleDelete = (transaction) => {
     setDeletingTransaction(transaction);
-    setShowDeleteConfirm(true);
   };
 
-  // Confirm delete transaction
-  const confirmDeleteTransaction = async () => {
-    if (!deletingTransaction) return;
-
+  const confirmDelete = async () => {
     try {
       await api.delete(`/transactions/${deletingTransaction._id}`);
-      toast.success("Transaction deleted successfully");
-
-      // Remove from state
       setTransactions((prev) =>
         prev.filter((t) => t._id !== deletingTransaction._id)
       );
-
-      // Close modal
-      setShowDeleteConfirm(false);
       setDeletingTransaction(null);
-    } catch (error) {
-      console.error("Failed to delete transaction:", error);
-      toast.error("Failed to delete transaction");
+      fetchTransactions(); // Refresh to update pagination
+    } catch (err) {
+      setError("Failed to delete transaction");
+      console.error("Delete transaction error:", err);
     }
   };
 
-  // Handle update transaction
-  const handleUpdateTransaction = async (updatedData) => {
-    if (!editingTransaction || isSubmitting) return;
+  const handleFiltersChange = (newFilters) => {
+    setFilters((prev) => ({ ...prev, ...newFilters, page: 1 }));
+  };
 
-    try {
-      setIsSubmitting(true);
-      const response = await api.put(
-        `/transactions/${editingTransaction._id}`,
-        updatedData
-      );
-      toast.success("Transaction updated successfully");
+  const clearFilters = () => {
+    setFilters({
+      page: 1,
+      limit: 20,
+      type: "",
+      category: "",
+      startDate: "",
+      endDate: "",
+      search: "",
+    });
+  };
 
-      // Update in state
-      setTransactions((prev) =>
-        prev.map((t) =>
-          t._id === editingTransaction._id ? response.data.transaction : t
-        )
-      );
+  // Bulk selection functions
+  const toggleBulkSelectMode = () => {
+    setBulkSelectMode(!bulkSelectMode);
+    setSelectedTransactions([]);
+  };
 
-      // Close modal
-      setShowEditForm(false);
-      setEditingTransaction(null);
-    } catch (error) {
-      console.error("Failed to update transaction:", error);
-      const errorMessage =
-        error.response?.data?.message || "Failed to update transaction";
-      toast.error(errorMessage);
-    } finally {
-      setIsSubmitting(false);
+  const toggleTransactionSelection = (transaction) => {
+    setSelectedTransactions((prev) => {
+      const isSelected = prev.some((t) => t._id === transaction._id);
+      if (isSelected) {
+        return prev.filter((t) => t._id !== transaction._id);
+      } else {
+        return [...prev, transaction];
+      }
+    });
+  };
+
+  const selectAllTransactions = () => {
+    if (selectedTransactions.length === transactions.length) {
+      setSelectedTransactions([]);
+    } else {
+      setSelectedTransactions([...transactions]);
     }
   };
 
-  // Handle add transaction
-  const handleAddTransaction = async (e) => {
-    e.preventDefault();
-    if (isSubmitting) return;
-
-    const formData = new FormData(e.target);
-    const description = formData.get("description")?.trim();
-    const amount = parseFloat(formData.get("amount"));
-
-    // Basic validation
-    if (!description) {
-      toast.error("Description is required");
-      return;
+  const handleBulkDelete = () => {
+    if (selectedTransactions.length > 0) {
+      setShowBulkDeleteModal(true);
     }
+  };
 
-    if (!amount || amount <= 0) {
-      toast.error("Amount must be greater than 0");
-      return;
-    }
-
-    const transactionData = {
-      description,
-      amount,
-      category: formData.get("category"),
-      type: formData.get("type"),
-      date: formData.get("date"),
-    };
-
+  const confirmBulkDelete = async (deleteData) => {
     try {
-      setIsSubmitting(true);
+      const result = await bulkDeleteTransactions(deleteData);
+
+      // Remove deleted transactions from the current list
+      if (deleteData.deleteType === "selected") {
+        setTransactions((prev) =>
+          prev.filter(
+            (t) => !selectedTransactions.some((st) => st._id === t._id)
+          )
+        );
+      } else {
+        // For date range or last days, refresh the entire list
+        await fetchTransactions();
+      }
+
+      setSelectedTransactions([]);
+      setBulkSelectMode(false);
+      setShowBulkDeleteModal(false);
+
+      // Show success message
+      alert(`Successfully deleted ${result.deletedCount} transaction(s)`);
+    } catch (err) {
+      setError("Failed to delete transactions");
+      console.error("Bulk delete error:", err);
+      alert("Failed to delete transactions. Please try again.");
+    }
+  };
+
+  const handleTransactionSubmit = async (transactionData) => {
+    try {
       const response = await api.post("/transactions", transactionData);
-      toast.success("Transaction added successfully");
-
-      // Add to state
       setTransactions((prev) => [response.data.transaction, ...prev]);
-
-      // Close modal
-      setShowAddForm(false);
-    } catch (error) {
-      console.error("Failed to add transaction:", error);
-      const errorMessage =
-        error.response?.data?.message || "Failed to add transaction";
-      toast.error(errorMessage);
-    } finally {
-      setIsSubmitting(false);
+      setShowForm(false);
+      fetchTransactions(); // Refresh to get updated pagination
+    } catch (err) {
+      setError("Failed to create transaction");
+      console.error("Create transaction error:", err);
     }
   };
 
-  const handleFilterChange = (key, value) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: value,
-      page: 1, // Reset to first page when filtering
-    }));
+  const handleTransactionUpdate = async (updatedTransaction) => {
+    setTransactions((prev) =>
+      prev.map((t) =>
+        t._id === updatedTransaction._id ? updatedTransaction : t
+      )
+    );
+    setEditingTransaction(null);
   };
 
-  const handlePageChange = (newPage) => {
-    setFilters((prev) => ({
-      ...prev,
-      page: newPage,
-    }));
-  };
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Transactions</h1>
-          <p className="text-gray-600">Manage your income and expenses</p>
+    <div className="container mx-auto px-4 py-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <h1 className="text-2xl font-bold text-gray-800">Transactions</h1>
+
+        <div className="flex flex-wrap gap-2">
+          {/* Bulk Select Toggle */}
+          <button
+            onClick={toggleBulkSelectMode}
+            className={`px-4 py-2 rounded-md flex items-center transition-colors ${
+              bulkSelectMode
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            <FaCheckSquare className="mr-2" />
+            {bulkSelectMode ? "Exit Select" : "Bulk Select"}
+          </button>
+
+          {/* Bulk Actions */}
+          {bulkSelectMode && (
+            <>
+              <button
+                onClick={selectAllTransactions}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 flex items-center"
+              >
+                {selectedTransactions.length === transactions.length ? (
+                  <FaCheckSquare className="mr-2" />
+                ) : (
+                  <FaSquare className="mr-2" />
+                )}
+                {selectedTransactions.length === transactions.length
+                  ? "Deselect All"
+                  : "Select All"}
+              </button>
+
+              <button
+                onClick={handleBulkDelete}
+                disabled={selectedTransactions.length === 0}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              >
+                <FaTrash className="mr-2" />
+                Delete ({selectedTransactions.length})
+              </button>
+            </>
+          )}
+
+          {/* View Mode Toggle */}
+          <div className="flex bg-gray-100 rounded-md p-1">
+            <button
+              onClick={() => setViewMode("card")}
+              className={`px-3 py-1 rounded-md flex items-center ${
+                viewMode === "card"
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-gray-600"
+              }`}
+            >
+              <FaTh className="mr-1" />
+              Card
+            </button>
+            <button
+              onClick={() => setViewMode("table")}
+              className={`px-3 py-1 rounded-md flex items-center ${
+                viewMode === "table"
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-gray-600"
+              }`}
+            >
+              <FaTable className="mr-1" />
+              Table
+            </button>
+          </div>
+
+          {/* Add Transaction Button */}
+          <button
+            onClick={() => setShowForm(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center"
+          >
+            <FaPlus className="mr-2" />
+            Add Transaction
+          </button>
         </div>
-        <button
-          onClick={() => setShowAddForm(true)}
-          className="btn-primary flex items-center"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Transaction
-        </button>
       </div>
 
-      {/* Filters */}
+      {/* Selection Summary */}
+      {bulkSelectMode && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <p className="text-blue-800">
+            <span className="font-medium">{selectedTransactions.length}</span>{" "}
+            of <span className="font-medium">{transactions.length}</span>{" "}
+            transactions selected
+            {selectedTransactions.length > 0 && (
+              <span className="ml-4 text-sm">
+                Total amount: ₹
+                {selectedTransactions
+                  .reduce((sum, t) => sum + t.amount, 0)
+                  .toFixed(2)}
+              </span>
+            )}
+          </p>
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+        </div>
+      )}
+
       <TransactionFilters
         filters={filters}
-        onFilterChange={handleFilterChange}
+        onFiltersChange={handleFiltersChange}
+        onClearFilters={clearFilters}
       />
 
-      {/* Transactions List */}
-      <div className="card">
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <LoadingSpinner size="large" />
-          </div>
-        ) : transactions.length > 0 ? (
-          <div className="space-y-4">
-            {/* Desktop Table */}
-            <TransactionTable
-              transactions={transactions}
-              formatCurrency={formatCurrency}
-              formatDate={formatDate}
-              onRowClick={handleViewTransaction}
-              onEdit={handleEditTransaction}
-              onDelete={handleDeleteTransaction}
-            />
-
-            {/* Mobile Cards */}
-            <div className="md:hidden space-y-4">
+      {transactions.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-gray-500">No transactions found</p>
+        </div>
+      ) : (
+        <>
+          {viewMode === "card" ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {transactions.map((transaction) => (
                 <TransactionCard
                   key={transaction._id}
                   transaction={transaction}
-                  formatCurrency={formatCurrency}
-                  formatDate={formatDate}
-                  onClick={handleViewTransaction}
-                  onEdit={handleEditTransaction}
-                  onDelete={handleDeleteTransaction}
+                  onViewDetails={handleViewDetails}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  isSelected={selectedTransactions.some(
+                    (t) => t._id === transaction._id
+                  )}
+                  onToggleSelect={() => toggleTransactionSelection(transaction)}
+                  bulkSelectMode={bulkSelectMode}
                 />
               ))}
             </div>
+          ) : (
+            <TransactionTable
+              transactions={transactions}
+              onViewDetails={handleViewDetails}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              selectedTransactions={selectedTransactions}
+              onToggleSelect={toggleTransactionSelection}
+              bulkSelectMode={bulkSelectMode}
+            />
+          )}
 
-            {/* Pagination */}
-            {pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between border-t border-gray-200 pt-4">
-                <div className="text-sm text-gray-700">
-                  Showing{" "}
-                  {(pagination.currentPage - 1) * pagination.itemsPerPage + 1}{" "}
-                  to{" "}
-                  {Math.min(
-                    pagination.currentPage * pagination.itemsPerPage,
-                    pagination.totalItems
-                  )}{" "}
-                  of {pagination.totalItems} results
-                </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => handlePageChange(pagination.currentPage - 1)}
-                    disabled={!pagination.hasPrevPage}
-                    className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() => handlePageChange(pagination.currentPage + 1)}
-                    disabled={!pagination.hasNextPage}
-                    className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <Calendar className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-            {filters.startDate ||
-            filters.endDate ||
-            filters.type ||
-            filters.category ||
-            filters.search ? (
-              <>
-                <p className="text-gray-500 mb-4">
-                  No transactions found for the current filters
-                </p>
-                <div className="space-y-2 mb-4">
-                  {filters.startDate && (
-                    <p className="text-sm text-gray-400">
-                      Start Date: {filters.startDate}
-                    </p>
-                  )}
-                  {filters.endDate && (
-                    <p className="text-sm text-gray-400">
-                      End Date: {filters.endDate}
-                    </p>
-                  )}
-                  {filters.type && (
-                    <p className="text-sm text-gray-400">
-                      Type: {filters.type}
-                    </p>
-                  )}
-                  {filters.category && (
-                    <p className="text-sm text-gray-400">
-                      Category: {filters.category}
-                    </p>
-                  )}
-                  {filters.search && (
-                    <p className="text-sm text-gray-400">
-                      Search: "{filters.search}"
-                    </p>
-                  )}
-                </div>
-                <button
-                  onClick={() =>
-                    setFilters({
-                      page: 1,
-                      limit: 20,
-                      type: "",
-                      category: "",
-                      search: "",
-                      startDate: "",
-                      endDate: "",
-                    })
-                  }
-                  className="btn-secondary mr-3"
-                >
-                  Clear Filters
-                </button>
-                <button
-                  onClick={() => setShowAddForm(true)}
-                  className="btn-primary"
-                >
-                  Add Transaction
-                </button>
-              </>
-            ) : (
-              <>
-                <p className="text-gray-500 mb-4">No transactions found</p>
-                <button
-                  onClick={() => setShowAddForm(true)}
-                  className="btn-primary"
-                >
-                  Add your first transaction
-                </button>
-              </>
-            )}
-          </div>
-        )}
-      </div>
+          {/* Pagination */}
+          {pagination.totalPages > 1 && (
+            <div className="flex justify-center items-center space-x-2 mt-6">
+              <button
+                onClick={() => handlePageChange(pagination.currentPage - 1)}
+                disabled={!pagination.hasPrevPage}
+                className="px-3 py-2 border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Previous
+              </button>
+
+              <span className="px-4 py-2 text-sm text-gray-700">
+                Page {pagination.currentPage} of {pagination.totalPages}
+              </span>
+
+              <button
+                onClick={() => handlePageChange(pagination.currentPage + 1)}
+                disabled={!pagination.hasNextPage}
+                className="px-3 py-2 border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </>
+      )}
 
       {/* Modals */}
-      <TransactionForm
-        show={showAddForm}
-        onClose={() => setShowAddForm(false)}
-        onSubmit={handleAddTransaction}
-        isSubmitting={isSubmitting}
-      />
+      {showForm && (
+        <TransactionForm
+          onSubmit={handleTransactionSubmit}
+          onCancel={() => setShowForm(false)}
+        />
+      )}
 
-      <EditTransactionModal
-        show={showEditForm}
-        transaction={editingTransaction}
-        onClose={() => {
-          setShowEditForm(false);
-          setEditingTransaction(null);
-        }}
-        onSubmit={handleUpdateTransaction}
-        isSubmitting={isSubmitting}
-      />
+      {detailsTransaction && (
+        <TransactionDetailsModal
+          transaction={detailsTransaction}
+          onClose={() => setDetailsTransaction(null)}
+          onEdit={() => {
+            setEditingTransaction(detailsTransaction);
+            setDetailsTransaction(null);
+          }}
+          onDelete={() => {
+            setDeletingTransaction(detailsTransaction);
+            setDetailsTransaction(null);
+          }}
+        />
+      )}
 
-      <DeleteConfirmModal
-        show={showDeleteConfirm}
-        transaction={deletingTransaction}
-        onClose={() => {
-          setShowDeleteConfirm(false);
-          setDeletingTransaction(null);
-        }}
-        onConfirm={confirmDeleteTransaction}
-        formatCurrency={formatCurrency}
-        formatDate={formatDate}
-      />
+      {editingTransaction && (
+        <EditTransactionModal
+          transaction={editingTransaction}
+          onSave={handleTransactionUpdate}
+          onCancel={() => setEditingTransaction(null)}
+        />
+      )}
 
-      <TransactionDetailsModal
-        show={showDetailsModal}
-        transaction={selectedTransaction}
-        onClose={() => {
-          setShowDetailsModal(false);
-          setSelectedTransaction(null);
-        }}
-        onEdit={handleEditTransaction}
-        onDelete={handleDeleteTransaction}
-        formatCurrency={formatCurrency}
-        formatDate={formatDate}
-      />
+      {deletingTransaction && (
+        <DeleteConfirmModal
+          transaction={deletingTransaction}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeletingTransaction(null)}
+        />
+      )}
+
+      {showBulkDeleteModal && (
+        <BulkDeleteModal
+          isOpen={showBulkDeleteModal}
+          onClose={() => setShowBulkDeleteModal(false)}
+          onConfirm={confirmBulkDelete}
+          selectedTransactions={selectedTransactions}
+          totalTransactions={transactions.length}
+        />
+      )}
     </div>
   );
-}
+};
 
 export default Transactions;

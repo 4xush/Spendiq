@@ -37,3 +37,14 @@ api.interceptors.response.use(
 )
 
 export default api
+// Bulk delete transactions
+export const bulkDeleteTransactions = async (deleteData) => {
+    try {
+        const response = await api.delete('/transactions/bulk', {
+            data: deleteData
+        })
+        return response.data
+    } catch (error) {
+        throw error
+    }
+}
