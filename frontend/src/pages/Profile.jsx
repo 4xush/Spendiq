@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Save, Settings } from "lucide-react";
+import { User, Save, Settings, Shield, Calendar, CheckCircle } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
 import api from "../utils/api";
@@ -61,7 +61,7 @@ function Profile() {
       });
 
       toast.success("Profile updated successfully!");
-      await loadUser(); // Refresh user data
+      await loadUser();
     } catch (error) {
       console.error("Profile update error:", error);
       toast.error("Failed to update profile");
@@ -72,201 +72,255 @@ function Profile() {
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center h-96">
+      <div className="flex items-center justify-center min-h-screen">
         <LoadingSpinner size="large" />
       </div>
     );
   }
 
+  const memberSince = new Date(user.createdAt).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+  });
+
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="text-center">
-        <div className="w-24 h-24 bg-primary-500 rounded-full flex items-center justify-center mx-auto mb-4">
-          <span className="text-2xl font-bold text-white">
-            {user.name?.charAt(0)?.toUpperCase()}
-          </span>
-        </div>
-        <h1 className="text-2xl font-bold text-gray-900">Profile Settings</h1>
-        <p className="text-gray-600">
-          Manage your account information and preferences
-        </p>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
+        {/* Header Card */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 mb-6">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+            {/* Avatar */}
+            <div className="relative">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-md">
+                <span className="text-3xl sm:text-4xl font-bold text-white">
+                  {user.name?.charAt(0)?.toUpperCase() || "U"}
+                </span>
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-4 border-white"></div>
+            </div>
 
-      {/* Profile Form */}
-      <div className="card">
-        <div className="flex items-center mb-6">
-          <User className="h-5 w-5 text-gray-400 mr-2" />
-          <h2 className="text-lg font-semibold text-gray-900">
-            Personal Information
-          </h2>
+            {/* User Info */}
+            <div className="flex-1 text-center sm:text-left">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
+                {user.name}
+              </h1>
+              <p className="text-sm text-gray-500 mb-3">{user.email}</p>
+              
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-medium">
+                  <CheckCircle className="h-3.5 w-3.5" />
+                  Active
+                </div>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium">
+                  <Calendar className="h-3.5 w-3.5" />
+                  Since {memberSince}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label
-              htmlFor="name"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Full Name
-            </label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              required
-              className="input"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Enter your full name"
-            />
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Main Form - 2 columns */}
+          <div className="lg:col-span-2">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Personal Information */}
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center gap-2 mb-6">
+                  <div className="p-2 bg-blue-50 rounded-lg">
+                    <User className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Personal Information
+                  </h2>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label
+                      htmlFor="name"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      id="name"
+                      name="name"
+                      required
+                      className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      value={formData.name}
+                      onChange={handleChange}
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="email"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      disabled
+                      className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50 text-gray-500 cursor-not-allowed"
+                      value={formData.email}
+                    />
+                    <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                      <Shield className="h-3 w-3" />
+                      Email cannot be changed for security reasons
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Preferences */}
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center gap-2 mb-6">
+                  <div className="p-2 bg-purple-50 rounded-lg">
+                    <Settings className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Preferences
+                  </h2>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label
+                      htmlFor="currency"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Currency
+                    </label>
+                    <select
+                      id="currency"
+                      name="preferences.currency"
+                      className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white cursor-pointer"
+                      value={formData.preferences.currency}
+                      onChange={handleChange}
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+                        backgroundPosition: 'right 0.75rem center',
+                        backgroundRepeat: 'no-repeat',
+                        backgroundSize: '1.25em 1.25em',
+                        paddingRight: '2.5rem'
+                      }}
+                    >
+                      <option value="INR">🇮🇳 Indian Rupee</option>
+                      <option value="USD">🇺🇸 US Dollar</option>
+                      <option value="EUR">🇪🇺 Euro</option>
+                      <option value="GBP">🇬🇧 British Pound</option>
+                      <option value="CAD">🇨🇦 Canadian Dollar</option>
+                      <option value="AUD">🇦🇺 Australian Dollar</option>
+                      <option value="JPY">🇯🇵 Japanese Yen</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="timezone"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Timezone
+                    </label>
+                    <select
+                      id="timezone"
+                      name="preferences.timezone"
+                      className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white cursor-pointer"
+                      value={formData.preferences.timezone}
+                      onChange={handleChange}
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+                        backgroundPosition: 'right 0.75rem center',
+                        backgroundRepeat: 'no-repeat',
+                        backgroundSize: '1.25em 1.25em',
+                        paddingRight: '2.5rem'
+                      }}
+                    >
+                      <option value="UTC">UTC</option>
+                      <option value="America/New_York">Eastern Time (US)</option>
+                      <option value="America/Chicago">Central Time (US)</option>
+                      <option value="America/Denver">Mountain Time (US)</option>
+                      <option value="America/Los_Angeles">Pacific Time (US)</option>
+                      <option value="Europe/London">London</option>
+                      <option value="Europe/Paris">Paris</option>
+                      <option value="Asia/Tokyo">Tokyo</option>
+                      <option value="Asia/Kolkata">India (IST)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Save Button */}
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 font-medium text-sm shadow-sm hover:shadow-md active:scale-95"
+                >
+                  {loading ? (
+                    <>
+                      <LoadingSpinner size="small" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      <span>Save Changes</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
 
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Email Address
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              disabled
-              className="input bg-gray-50 cursor-not-allowed"
-              value={formData.email}
-              placeholder="Email cannot be changed"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Email address cannot be changed for security reasons
-            </p>
-          </div>
+          {/* Sidebar - 1 column */}
+          <div className="space-y-6">
+            {/* Security Notice */}
+            <div className="bg-amber-50 rounded-2xl border border-amber-200 p-6">
+              <div className="flex gap-3">
+                <div className="flex-shrink-0">
+                  <div className="p-2 bg-amber-100 rounded-lg">
+                    <Shield className="h-5 w-5 text-amber-600" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-amber-900 mb-2">
+                    Security Notice
+                  </h3>
+                  <p className="text-xs text-amber-800 leading-relaxed">
+                    To change your password or email address, please contact support. 
+                    We require additional verification for sensitive changes.
+                  </p>
+                </div>
+              </div>
+            </div>
 
-          <div className="border-t border-gray-200 pt-6">
-            <div className="flex items-center mb-4">
-              <Settings className="h-5 w-5 text-gray-400 mr-2" />
-              <h3 className="text-lg font-semibold text-gray-900">
-                Preferences
+            {/* Quick Stats */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+              <h3 className="text-sm font-semibold text-gray-900 mb-4">
+                Account Stats
               </h3>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label
-                  htmlFor="currency"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Currency
-                </label>
-                <select
-                  id="currency"
-                  name="preferences.currency"
-                  className="input"
-                  value={formData.preferences.currency}
-                  onChange={handleChange}
-                >
-                  <option value="INR">Indian Rupee (INR)</option>
-                  <option value="USD">US Dollar (USD)</option>
-                  <option value="EUR">Euro (EUR)</option>
-                  <option value="GBP">British Pound (GBP)</option>
-                  <option value="CAD">Canadian Dollar (CAD)</option>
-                  <option value="AUD">Australian Dollar (AUD)</option>
-                  <option value="JPY">Japanese Yen (JPY)</option>
-                </select>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="text-xs text-gray-600">Member Since</span>
+                  <span className="text-sm font-semibold text-gray-900">
+                    {new Date(user.createdAt).toLocaleDateString("en-US", {
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="text-xs text-gray-600">Account Type</span>
+                  <span className="text-sm font-semibold text-gray-900">Free</span>
+                </div>
               </div>
-
-              <div>
-                <label
-                  htmlFor="timezone"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Timezone
-                </label>
-                <select
-                  id="timezone"
-                  name="preferences.timezone"
-                  className="input"
-                  value={formData.preferences.timezone}
-                  onChange={handleChange}
-                >
-                  <option value="UTC">UTC</option>
-                  <option value="America/New_York">Eastern Time</option>
-                  <option value="America/Chicago">Central Time</option>
-                  <option value="America/Denver">Mountain Time</option>
-                  <option value="America/Los_Angeles">Pacific Time</option>
-                  <option value="Europe/London">London</option>
-                  <option value="Europe/Paris">Paris</option>
-                  <option value="Asia/Tokyo">Tokyo</option>
-                  <option value="Asia/Kolkata">India</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-            >
-              {loading ? (
-                <>
-                  <LoadingSpinner size="small" className="mr-2" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Changes
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* Account Stats */}
-      <div className="card">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Account Information
-        </h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm font-medium text-gray-600">Member Since</p>
-            <p className="text-lg font-semibold text-gray-900">
-              {new Date(user.createdAt).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-gray-600">Account Status</p>
-            <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
-              Active
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Security Notice */}
-      <div className="card bg-yellow-50 border-yellow-200">
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <Settings className="h-5 w-5 text-yellow-600" />
-          </div>
-          <div className="ml-3">
-            <h3 className="text-sm font-medium text-yellow-800">
-              Security Notice
-            </h3>
-            <div className="mt-2 text-sm text-yellow-700">
-              <p>
-                To change your password or email address, please contact
-                support. We take security seriously and require additional
-                verification for sensitive changes.
-              </p>
             </div>
           </div>
         </div>

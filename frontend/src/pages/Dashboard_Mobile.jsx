@@ -432,33 +432,6 @@ function DashboardMobile() {
       >
         <Plus className="h-6 w-6" />
       </Link>
-
-      {/* Quick Actions Bottom Sheet */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 safe-area-bottom">
-        <div className="flex justify-around">
-          <Link
-            to="/upload"
-            className="flex flex-col items-center space-y-1 text-gray-600 hover:text-blue-600 transition-colors"
-          >
-            <Receipt className="h-6 w-6" />
-            <span className="text-xs font-medium">Upload</span>
-          </Link>
-          <Link
-            to="/analytics"
-            className="flex flex-col items-center space-y-1 text-gray-600 hover:text-blue-600 transition-colors"
-          >
-            <BarChart3 className="h-6 w-6" />
-            <span className="text-xs font-medium">Analytics</span>
-          </Link>
-          <Link
-            to="/p2p"
-            className="flex flex-col items-center space-y-1 text-gray-600 hover:text-blue-600 transition-colors"
-          >
-            <Users className="h-6 w-6" />
-            <span className="text-xs font-medium">P2P</span>
-          </Link>
-        </div>
-      </div>
     </div>
   );
 }
