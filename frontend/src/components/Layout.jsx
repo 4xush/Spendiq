@@ -11,11 +11,13 @@ import {
   Menu,
   X,
   IndianRupee,
+  Users,
 } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Transactions", href: "/transactions", icon: Receipt },
+  { name: "P2P Transfers", href: "/p2p", icon: Users },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Upload", href: "/upload", icon: Upload },
   { name: "Profile", href: "/profile", icon: User },

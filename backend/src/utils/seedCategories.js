@@ -10,6 +10,7 @@ const defaultCategories = [
     { name: 'Business', type: 'income', color: '#059669', icon: '🏢', isDefault: true },
     { name: 'Investment', type: 'income', color: '#047857', icon: '📈', isDefault: true },
     { name: 'Gift', type: 'income', color: '#065F46', icon: '🎁', isDefault: true },
+    { name: 'P2P Received', type: 'income', color: '#7C3AED', icon: '👥', isDefault: true },
     { name: 'Other Income', type: 'income', color: '#064E3B', icon: '💰', isDefault: true },
 
     // Expense Categories
@@ -22,6 +23,7 @@ const defaultCategories = [
     { name: 'Bills & Utilities', type: 'expense', color: '#737373', icon: '📱', isDefault: true },
     { name: 'Healthcare', type: 'expense', color: '#525252', icon: '🏥', isDefault: true },
     { name: 'Travel', type: 'expense', color: '#404040', icon: '✈️', isDefault: true },
+    { name: 'P2P Transfers', type: 'expense', color: '#8B5CF6', icon: '💸', isDefault: true },
     { name: 'Other', type: 'expense', color: '#262626', icon: '📝', isDefault: true }
 ]
 

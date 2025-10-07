@@ -311,6 +311,196 @@ const createSampleTransactions = async (receipts) => {
     return await Transaction.insertMany(transactions);
 };
 
+// Create sample P2P transactions
+const createSampleP2PTransactions = async () => {
+    const p2pTransactions = [];
+
+    // P2P transaction data
+    const p2pData = [
+        // Money lent
+        {
+            type: 'lent',
+            personName: 'Rahul Sharma',
+            personContact: '+91 98765 43210',
+            amount: 15000,
+            description: 'Emergency medical expense help',
+            dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // 15 days from now
+            status: 'pending',
+            notes: 'Agreed to pay back in 2 weeks with no interest',
+            daysAgo: 5
+        },
+        {
+            type: 'lent',
+            personName: 'Priya Singh',
+            personContact: 'priya.singh@email.com',
+            amount: 8000,
+            description: 'College fees payment',
+            dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+            status: 'pending',
+            notes: 'Monthly installment for course fees',
+            daysAgo: 12
+        },
+        {
+            type: 'lent',
+            personName: 'Amit Kumar',
+            personContact: '+91 87654 32109',
+            amount: 3500,
+            description: 'Bike repair expenses',
+            status: 'completed',
+            notes: 'Paid back on time, good friend',
+            daysAgo: 25
+        },
+
+        // Money borrowed
+        {
+            type: 'borrowed',
+            personName: 'Neha Gupta',
+            personContact: '+91 76543 21098',
+            amount: 12000,
+            description: 'Laptop purchase loan',
+            dueDate: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000), // 45 days from now
+            status: 'pending',
+            notes: 'Will pay back after salary. 0% interest',
+            daysAgo: 18
+        },
+        {
+            type: 'borrowed',
+            personName: 'Dad',
+            personContact: '+91 98765 00000',
+            amount: 25000,
+            description: 'House rent advance',
+            status: 'completed',
+            notes: 'Family help for new apartment',
+            daysAgo: 45
+        },
+
+        // Gifts given
+        {
+            type: 'gift_given',
+            personName: 'Anita (Sister)',
+            personContact: '+91 87654 11111',
+            amount: 5000,
+            description: 'Birthday gift money',
+            status: 'completed',
+            notes: 'Happy birthday! Buy something nice',
+            daysAgo: 20
+        },
+        {
+            type: 'gift_given',
+            personName: 'Ravi (Cousin)',
+            personContact: '+91 76543 22222',
+            amount: 2000,
+            description: 'Wedding gift',
+            status: 'completed',
+            notes: 'Congratulations on your wedding!',
+            daysAgo: 35
+        },
+
+        // Gifts received
+        {
+            type: 'gift_received',
+            personName: 'Mom',
+            personContact: '+91 98765 11111',
+            amount: 10000,
+            description: 'Festival gift',
+            status: 'completed',
+            notes: 'Diwali gift from family',
+            daysAgo: 8
+        },
+        {
+            type: 'gift_received',
+            personName: 'Uncle',
+            personContact: '+91 87654 33333',
+            amount: 7500,
+            description: 'Job promotion celebration',
+            status: 'completed',
+            notes: 'Congratulations on the new job!',
+            daysAgo: 30
+        },
+
+        // Payments made
+        {
+            type: 'payment',
+            personName: 'Suresh (Electrician)',
+            personContact: '+91 76543 44444',
+            amount: 1200,
+            description: 'House wiring work',
+            status: 'completed',
+            notes: 'Good work, recommended by neighbor',
+            daysAgo: 15
+        },
+        {
+            type: 'payment',
+            personName: 'Maya (Tutor)',
+            personContact: '+91 98765 55555',
+            amount: 3000,
+            description: 'Monthly tutoring fees',
+            status: 'completed',
+            notes: 'Math and Science classes',
+            daysAgo: 7
+        },
+
+        // Reimbursements
+        {
+            type: 'reimbursement',
+            personName: 'Vikash (Roommate)',
+            personContact: '+91 87654 66666',
+            amount: 800,
+            description: 'Shared grocery bill',
+            dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+            status: 'pending',
+            notes: 'Split the monthly grocery shopping',
+            daysAgo: 3
+        },
+        {
+            type: 'reimbursement',
+            personName: 'Office Team',
+            personContact: 'team-lead@company.com',
+            amount: 2500,
+            description: 'Team lunch expenses',
+            status: 'completed',
+            notes: 'Company reimbursement for team outing',
+            daysAgo: 14
+        }
+    ];
+
+    for (const p2pItem of p2pData) {
+        // Determine transaction type and category based on P2P type
+        let transactionType = 'expense';
+        let category = 'P2P Transfers';
+
+        if (p2pItem.type === 'borrowed' || p2pItem.type === 'gift_received') {
+            transactionType = 'income';
+            category = 'P2P Received';
+        }
+
+        // Calculate transaction date
+        const transactionDate = new Date(Date.now() - p2pItem.daysAgo * 24 * 60 * 60 * 1000);
+
+        const transaction = new Transaction({
+            userId: DEMO_USER_ID,
+            type: transactionType,
+            amount: p2pItem.amount,
+            category: category,
+            description: p2pItem.description,
+            date: transactionDate,
+            source: 'manual',
+            personToPerson: {
+                type: p2pItem.type,
+                personName: p2pItem.personName,
+                personContact: p2pItem.personContact,
+                dueDate: p2pItem.dueDate,
+                status: p2pItem.status,
+                notes: p2pItem.notes
+            }
+        });
+
+        p2pTransactions.push(transaction);
+    }
+
+    return await Transaction.insertMany(p2pTransactions);
+};
+
 // Verify user exists
 const verifyUser = async () => {
     try {
@@ -355,17 +545,33 @@ const seedDatabase = async () => {
         const transactions = await createSampleTransactions(receipts);
         console.log(`✅ Created ${transactions.length} sample transactions`);
 
+        console.log('👥 Creating sample P2P transactions...');
+        const p2pTransactions = await createSampleP2PTransactions();
+        console.log(`✅ Created ${p2pTransactions.length} P2P transactions`);
+
+        // Combine all transactions for summary
+        const allTransactions = [...transactions, ...p2pTransactions];
+
         // Display summary
-        const incomeTransactions = transactions.filter(t => t.type === 'income');
-        const expenseTransactions = transactions.filter(t => t.type === 'expense');
+        const incomeTransactions = allTransactions.filter(t => t.type === 'income');
+        const expenseTransactions = allTransactions.filter(t => t.type === 'expense');
         const totalIncome = incomeTransactions.reduce((sum, t) => sum + t.amount, 0);
         const totalExpenses = expenseTransactions.reduce((sum, t) => sum + t.amount, 0);
+
+        // P2P specific summary
+        const p2pLent = p2pTransactions.filter(t => t.personToPerson?.type === 'lent');
+        const p2pBorrowed = p2pTransactions.filter(t => t.personToPerson?.type === 'borrowed');
+        const p2pPending = p2pTransactions.filter(t => t.personToPerson?.status === 'pending');
 
         console.log('\n📊 Summary:');
         console.log(`💵 Total Income: ₹${totalIncome.toLocaleString('en-IN')}`);
         console.log(`💸 Total Expenses: ₹${totalExpenses.toLocaleString('en-IN')}`);
         console.log(`📈 Net: ₹${(totalIncome - totalExpenses).toLocaleString('en-IN')}`);
         console.log(`🧾 Transactions with receipts: ${transactions.filter(t => t.receiptId).length}`);
+        console.log(`\n👥 P2P Summary:`);
+        console.log(`💸 Money Lent: ${p2pLent.length} transactions`);
+        console.log(`💰 Money Borrowed: ${p2pBorrowed.length} transactions`);
+        console.log(`⏰ Pending P2P: ${p2pPending.length} transactions`);
 
         console.log('\n🎉 Database seeded successfully!');
         console.log('🌐 You can now view the dashboard and analytics with demo data');

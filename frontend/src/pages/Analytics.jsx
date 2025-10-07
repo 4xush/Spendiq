@@ -1,5 +1,11 @@
 import { useState, useEffect } from "react";
-import { TrendingUp, TrendingDown, IndianRupee, Calendar } from "lucide-react";
+import {
+  TrendingUp,
+  TrendingDown,
+  IndianRupee,
+  Calendar,
+  Users,
+} from "lucide-react";
 import {
   PieChart,
   Pie,
@@ -17,6 +23,7 @@ import {
 } from "recharts";
 import api from "../utils/api";
 import LoadingSpinner from "../components/LoadingSpinner";
+import P2PAnalytics from "../components/P2PAnalytics";
 
 const COLORS = [
   "#3B82F6",
@@ -35,6 +42,7 @@ function Analytics() {
   const [trendData, setTrendData] = useState([]);
   const [topCategories, setTopCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("general");
   const [dateRange, setDateRange] = useState({
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
       .toISOString()
@@ -136,251 +144,297 @@ function Analytics() {
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="card">
-          <div className="flex items-center">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <TrendingUp className="h-6 w-6 text-green-600" />
+      {/* Tab Navigation */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveTab("general")}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === "general"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            <div className="flex items-center space-x-2">
+              <TrendingUp className="h-4 w-4" />
+              <span>General Analytics</span>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Income</p>
-              <p className="text-2xl font-bold text-green-600">
-                {formatCurrency(summary?.totalIncome || 0)}
-              </p>
+          </button>
+          <button
+            onClick={() => setActiveTab("p2p")}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === "p2p"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            <div className="flex items-center space-x-2">
+              <Users className="h-4 w-4" />
+              <span>P2P Analytics</span>
             </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center">
-            <div className="p-3 bg-red-100 rounded-lg">
-              <TrendingDown className="h-6 w-6 text-red-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">
-                Total Expenses
-              </p>
-              <p className="text-2xl font-bold text-red-600">
-                {formatCurrency(summary?.totalExpenses || 0)}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <IndianRupee className="h-6 w-6 text-blue-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Net Amount</p>
-              <p
-                className={`text-2xl font-bold ${
-                  (summary?.netAmount || 0) >= 0
-                    ? "text-green-600"
-                    : "text-red-600"
-                }`}
-              >
-                {formatCurrency(summary?.netAmount || 0)}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center">
-            <div className="p-3 bg-purple-100 rounded-lg">
-              <Calendar className="h-6 w-6 text-purple-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Transactions</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {summary?.totalTransactions || 0}
-              </p>
-            </div>
-          </div>
-        </div>
+          </button>
+        </nav>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Spending by Category - Pie Chart */}
-        <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Spending by Category
-          </h3>
-          {categoryData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={categoryData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ category, percentage }) =>
-                    `${category}: ${percentage}%`
-                  }
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="amount"
-                >
-                  {categoryData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => formatCurrency(value)} />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex items-center justify-center h-64 text-gray-500">
-              No category data available
+      {/* Tab Content */}
+      {activeTab === "general" && (
+        <>
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="card">
+              <div className="flex items-center">
+                <div className="p-3 bg-green-100 rounded-lg">
+                  <TrendingUp className="h-6 w-6 text-green-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">
+                    Total Income
+                  </p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {formatCurrency(summary?.totalIncome || 0)}
+                  </p>
+                </div>
+              </div>
             </div>
-          )}
-        </div>
 
-        {/* Income vs Expenses Trend */}
-        <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Income vs Expenses Trend
-          </h3>
-          {trendData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={trendData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" tickFormatter={formatDate} />
-                <YAxis tickFormatter={(value) => `$${value}`} />
-                <Tooltip
-                  labelFormatter={(label) => `Date: ${formatDate(label)}`}
-                  formatter={(value, name) => [formatCurrency(value), name]}
-                />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="income"
-                  stroke="#10B981"
-                  strokeWidth={2}
-                  name="Income"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="expenses"
-                  stroke="#EF4444"
-                  strokeWidth={2}
-                  name="Expenses"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="netAmount"
-                  stroke="#3B82F6"
-                  strokeWidth={2}
-                  name="Net Amount"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex items-center justify-center h-64 text-gray-500">
-              No trend data available
+            <div className="card">
+              <div className="flex items-center">
+                <div className="p-3 bg-red-100 rounded-lg">
+                  <TrendingDown className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">
+                    Total Expenses
+                  </p>
+                  <p className="text-2xl font-bold text-red-600">
+                    {formatCurrency(summary?.totalExpenses || 0)}
+                  </p>
+                </div>
+              </div>
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* Top Categories Bar Chart */}
-      <div className="card">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Top Spending Categories
-        </h3>
-        {topCategories.length > 0 ? (
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={topCategories} layout="horizontal">
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" tickFormatter={(value) => `$${value}`} />
-              <YAxis type="category" dataKey="category" width={100} />
-              <Tooltip
-                formatter={(value) => [formatCurrency(value), "Amount"]}
-              />
-              <Bar dataKey="amount" fill="#3B82F6" />
-            </BarChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="flex items-center justify-center h-64 text-gray-500">
-            No category data available
-          </div>
-        )}
-      </div>
-
-      {/* Category Breakdown Table */}
-      <div className="card">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Category Breakdown
-        </h3>
-        {categoryData.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    Category
-                  </th>
-                  <th className="text-right py-3 px-4 font-medium text-gray-700">
-                    Amount
-                  </th>
-                  <th className="text-right py-3 px-4 font-medium text-gray-700">
-                    Percentage
-                  </th>
-                  <th className="text-right py-3 px-4 font-medium text-gray-700">
-                    Transactions
-                  </th>
-                  <th className="text-right py-3 px-4 font-medium text-gray-700">
-                    Avg Amount
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {categoryData.map((category, index) => (
-                  <tr
-                    key={category.category}
-                    className="border-b border-gray-100"
+            <div className="card">
+              <div className="flex items-center">
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <IndianRupee className="h-6 w-6 text-blue-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">
+                    Net Amount
+                  </p>
+                  <p
+                    className={`text-2xl font-bold ${
+                      (summary?.netAmount || 0) >= 0
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }`}
                   >
-                    <td className="py-3 px-4">
-                      <div className="flex items-center">
-                        <div
-                          className="w-3 h-3 rounded-full mr-3"
-                          style={{
-                            backgroundColor: COLORS[index % COLORS.length],
-                          }}
+                    {formatCurrency(summary?.netAmount || 0)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="flex items-center">
+                <div className="p-3 bg-purple-100 rounded-lg">
+                  <Calendar className="h-6 w-6 text-purple-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">
+                    Transactions
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {summary?.totalTransactions || 0}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Spending by Category - Pie Chart */}
+            <div className="card">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Spending by Category
+              </h3>
+              {categoryData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={categoryData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ category, percentage }) =>
+                        `${category}: ${percentage}%`
+                      }
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="amount"
+                    >
+                      {categoryData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
                         />
-                        <span className="font-medium text-gray-900">
-                          {category.category}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-right font-medium text-red-600">
-                      {formatCurrency(category.amount)}
-                    </td>
-                    <td className="py-3 px-4 text-right text-gray-600">
-                      {category.percentage}%
-                    </td>
-                    <td className="py-3 px-4 text-right text-gray-600">
-                      {category.count}
-                    </td>
-                    <td className="py-3 px-4 text-right text-gray-600">
-                      {formatCurrency(category.avgAmount)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => formatCurrency(value)} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-64 text-gray-500">
+                  No category data available
+                </div>
+              )}
+            </div>
+
+            {/* Income vs Expenses Trend */}
+            <div className="card">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Income vs Expenses Trend
+              </h3>
+              {trendData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={trendData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" tickFormatter={formatDate} />
+                    <YAxis tickFormatter={(value) => `$${value}`} />
+                    <Tooltip
+                      labelFormatter={(label) => `Date: ${formatDate(label)}`}
+                      formatter={(value, name) => [formatCurrency(value), name]}
+                    />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="income"
+                      stroke="#10B981"
+                      strokeWidth={2}
+                      name="Income"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="expenses"
+                      stroke="#EF4444"
+                      strokeWidth={2}
+                      name="Expenses"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="netAmount"
+                      stroke="#3B82F6"
+                      strokeWidth={2}
+                      name="Net Amount"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-64 text-gray-500">
+                  No trend data available
+                </div>
+              )}
+            </div>
           </div>
-        ) : (
-          <div className="text-center py-8 text-gray-500">
-            No category data available for the selected date range
+
+          {/* Top Categories Bar Chart */}
+          <div className="card">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Top Spending Categories
+            </h3>
+            {topCategories.length > 0 ? (
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart data={topCategories} layout="horizontal">
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" tickFormatter={(value) => `$${value}`} />
+                  <YAxis type="category" dataKey="category" width={100} />
+                  <Tooltip
+                    formatter={(value) => [formatCurrency(value), "Amount"]}
+                  />
+                  <Bar dataKey="amount" fill="#3B82F6" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-64 text-gray-500">
+                No category data available
+              </div>
+            )}
           </div>
-        )}
-      </div>
+
+          {/* Category Breakdown Table */}
+          <div className="card">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Category Breakdown
+            </h3>
+            {categoryData.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">
+                        Category
+                      </th>
+                      <th className="text-right py-3 px-4 font-medium text-gray-700">
+                        Amount
+                      </th>
+                      <th className="text-right py-3 px-4 font-medium text-gray-700">
+                        Percentage
+                      </th>
+                      <th className="text-right py-3 px-4 font-medium text-gray-700">
+                        Transactions
+                      </th>
+                      <th className="text-right py-3 px-4 font-medium text-gray-700">
+                        Avg Amount
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {categoryData.map((category, index) => (
+                      <tr
+                        key={category.category}
+                        className="border-b border-gray-100"
+                      >
+                        <td className="py-3 px-4">
+                          <div className="flex items-center">
+                            <div
+                              className="w-3 h-3 rounded-full mr-3"
+                              style={{
+                                backgroundColor: COLORS[index % COLORS.length],
+                              }}
+                            />
+                            <span className="font-medium text-gray-900">
+                              {category.category}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-right font-medium text-red-600">
+                          {formatCurrency(category.amount)}
+                        </td>
+                        <td className="py-3 px-4 text-right text-gray-600">
+                          {category.percentage}%
+                        </td>
+                        <td className="py-3 px-4 text-right text-gray-600">
+                          {category.count}
+                        </td>
+                        <td className="py-3 px-4 text-right text-gray-600">
+                          {formatCurrency(category.avgAmount)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                No category data available for the selected date range
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* P2P Analytics Tab */}
+      {activeTab === "p2p" && <P2PAnalytics dateRange={dateRange} />}
     </div>
   );
 }

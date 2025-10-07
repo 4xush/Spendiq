@@ -9,7 +9,7 @@ const transactionSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['income', 'expense'],
+        enum: ['income', 'expense', 'transfer'],
         required: [true, 'Transaction type is required']
     },
     amount: {
@@ -45,6 +45,32 @@ const transactionSchema = new mongoose.Schema({
         type: String,
         trim: true
     }],
+    // P2P Transaction fields
+    personToPerson: {
+        type: {
+            type: String,
+            enum: ['lent', 'borrowed', 'gift_given', 'gift_received', 'payment', 'reimbursement'],
+        },
+        personName: {
+            type: String,
+            trim: true
+        },
+        personContact: {
+            type: String,
+            trim: true
+        },
+        dueDate: Date,
+        status: {
+            type: String,
+            enum: ['pending', 'completed', 'overdue', 'cancelled'],
+            default: 'pending'
+        },
+        linkedTransactionId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Transaction'
+        },
+        notes: String
+    },
     metadata: {
         confidence: Number, // AI confidence score for auto-categorized transactions
         originalText: String, // Original OCR text for receipts

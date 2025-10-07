@@ -9,6 +9,7 @@ import Upload from "./pages/Upload";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
+import P2PDashboard from "./pages/P2P/P2PDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -39,6 +40,7 @@ function App() {
                       <Route path="/transactions" element={<Transactions />} />
                       <Route path="/analytics" element={<Analytics />} />
                       <Route path="/upload" element={<Upload />} />
+                      <Route path="/p2p" element={<P2PDashboard />} />
                       <Route path="/profile" element={<Profile />} />
                     </Routes>
                   </Layout>
