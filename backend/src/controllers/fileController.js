@@ -302,6 +302,100 @@ export const processPDF = async (req, res) => {
     }
 }
 
+// Process image bank statement
+export const processImage = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                error: 'No image file uploaded'
+            })
+        }
+
+        const userId = req.user._id
+        const file = req.file
+
+        console.log(`🔍 Validating image: ${file.originalname} (${file.mimetype})`)
+
+        // Validate image file
+        const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png']
+        if (!allowedImageTypes.includes(file.mimetype)) {
+            fs.unlinkSync(file.path) // Clean up
+            return res.status(400).json({
+                error: 'File must be a PNG, JPG, or JPEG image'
+            })
+        }
+
+        console.log('✅ File validation passed')
+
+        // Extract text from image using OCR
+        console.log('📄 Starting image text extraction...')
+        const extractedText = await ocrService.extractTextFromImage(file.path)
+
+        console.log(`📊 Extraction complete:`, {
+            method: 'ocr',
+            textLength: extractedText.length
+        })
+
+        if (!extractedText || extractedText.trim().length < 10) {
+            console.log('⚠️ Warning: Very little text extracted from image')
+        }
+
+        // Parse transactions using AI
+        console.log('🤖 Analyzing bank statement image with AI...')
+        const extractedTransactions = await getGeminiService().analyzeBankStatement(extractedText)
+
+        // Create transactions
+        const createdTransactions = []
+        for (const transactionData of extractedTransactions) {
+            try {
+                const transaction = new Transaction({
+                    userId,
+                    type: transactionData.type,
+                    amount: transactionData.amount,
+                    category: transactionData.category || 'Other',
+                    description: transactionData.description,
+                    date: new Date(transactionData.date),
+                    source: 'image',
+                    metadata: {
+                        confidence: 0.7, // Image OCR usually less reliable than PDF
+                        originalText: transactionData.description
+                    }
+                })
+
+                await transaction.save()
+                createdTransactions.push(transaction)
+            } catch (error) {
+                console.error('Failed to create transaction:', error)
+            }
+        }
+
+        // Clean up uploaded file
+        fs.unlinkSync(file.path)
+
+        res.json({
+            message: `Successfully processed image and created ${createdTransactions.length} transactions`,
+            transactionsCreated: createdTransactions.length,
+            transactions: createdTransactions
+        })
+
+    } catch (error) {
+        console.error('Image processing error:', error)
+
+        // Clean up uploaded file
+        if (req.file) {
+            try {
+                fs.unlinkSync(req.file.path)
+            } catch (unlinkError) {
+                console.error('Failed to clean up file:', unlinkError)
+            }
+        }
+
+        res.status(500).json({
+            error: 'Failed to process image'
+        })
+    }
+}
+
 // Get receipt processing status
 export const getReceiptStatus = async (req, res) => {
     try {

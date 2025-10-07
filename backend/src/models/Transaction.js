@@ -34,7 +34,7 @@ const transactionSchema = new mongoose.Schema({
     },
     source: {
         type: String,
-        enum: ['manual', 'receipt', 'pdf'],
+        enum: ['manual', 'receipt', 'pdf', 'image'],
         default: 'manual'
     },
     receiptUrl: {

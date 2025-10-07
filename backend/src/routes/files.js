@@ -2,6 +2,7 @@ import express from 'express'
 import {
     processReceipt,
     processPDF,
+    processImage,
     getReceiptStatus,
     getUserReceipts
 } from '../controllers/fileController.js'
@@ -18,6 +19,9 @@ router.post('/receipt', upload.single('receipt'), processReceipt)
 
 // PDF bank statement processing
 router.post('/pdf', upload.single('pdf'), processPDF)
+
+// Image bank statement processing
+router.post('/image', upload.single('image'), processImage)
 
 // Get receipt processing status
 router.get('/receipt/:id', getReceiptStatus)

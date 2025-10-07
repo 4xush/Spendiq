@@ -144,6 +144,25 @@ function Upload() {
         toast.error("Invalid file format. Please upload PDF files only.");
         return false;
       }
+    } else if (type === "image") {
+      // Check image file types for bank statements
+      const allowedImageTypes = ["image/jpeg", "image/jpg", "image/png"];
+      if (!allowedImageTypes.includes(file.type)) {
+        toast.error(
+          "Invalid image format. Please upload PNG, JPG, or JPEG files only."
+        );
+        return false;
+      }
+
+      // Check file extension matches type
+      const extension = file.name.split(".").pop()?.toLowerCase();
+      const validExtensions = ["jpg", "jpeg", "png"];
+      if (!validExtensions.includes(extension)) {
+        toast.error(
+          "Invalid file extension. Please ensure your image has a proper extension."
+        );
+        return false;
+      }
     }
 
     return true;
@@ -162,23 +181,34 @@ function Upload() {
 
     try {
       setUploading(true);
-      const endpoint = type === "receipt" ? "/files/receipt" : "/files/pdf";
+      let endpoint;
+      if (type === "receipt") {
+        endpoint = "/files/receipt";
+      } else if (type === "pdf") {
+        endpoint = "/files/pdf";
+      } else if (type === "image") {
+        endpoint = "/files/image";
+      }
+
       const response = await api.post(endpoint, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
 
-      if (type === "pdf") {
-        // PDF processing is synchronous - handle response immediately
-        console.log("📄 PDF Response received:", response.data);
+      if (type === "pdf" || type === "image") {
+        // PDF and Image processing are synchronous - handle response immediately
+        console.log(
+          `📄 ${type.toUpperCase()} Response received:`,
+          response.data
+        );
 
         const { transactionsCreated, message } = response.data;
         console.log("📊 Transactions created:", transactionsCreated);
 
         if (transactionsCreated && transactionsCreated > 0) {
           toast.success(
-            `🎉 PDF processed successfully! Created ${transactionsCreated} transactions.`
+            `🎉 ${type.toUpperCase()} processed successfully! Created ${transactionsCreated} transactions.`
           );
 
           // Add successful result
@@ -197,7 +227,7 @@ function Upload() {
         } else {
           // No transactions found
           toast.warning(
-            "⚠️ PDF processed but no transactions were found. Please check if the PDF contains a valid bank statement."
+            `⚠️ ${type.toUpperCase()} processed but no transactions were found. Please check if the file contains a valid bank statement.`
           );
 
           setUploadResults((prev) => [
@@ -209,7 +239,7 @@ function Upload() {
               status: "completed",
               timestamp: new Date(),
               transactionsCreated: 0,
-              message: "No transactions found in PDF",
+              message: `No transactions found in ${type.toUpperCase()}`,
             },
           ]);
         }
@@ -234,17 +264,19 @@ function Upload() {
       const errorMessage =
         error.response?.data?.error || `Failed to upload ${type}`;
 
-      // Show specific error message for PDF processing failures
-      if (type === "pdf") {
+      // Show specific error message for PDF/Image processing failures
+      if (type === "pdf" || type === "image") {
         if (error.response?.status === 500) {
           toast.error(
-            "❌ Failed to process PDF. The file may be corrupted, password-protected, or contain unreadable text. Please try a different PDF or contact support."
+            `❌ Failed to process ${type.toUpperCase()}. The file may be corrupted, unreadable, or contain unclear text. Please try a different file or contact support.`
           );
         } else {
-          toast.error(`❌ PDF Processing Error: ${errorMessage}`);
+          toast.error(
+            `❌ ${type.toUpperCase()} Processing Error: ${errorMessage}`
+          );
         }
 
-        // Add failed result for PDF
+        // Add failed result for PDF/Image
         setUploadResults((prev) => [
           ...prev,
           {
@@ -366,6 +398,16 @@ function Upload() {
           >
             PDF Import
           </button>
+          <button
+            onClick={() => setActiveTab("image")}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === "image"
+                ? "border-primary-500 text-primary-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Image Import
+          </button>
         </nav>
       </div>
 
@@ -421,6 +463,47 @@ function Upload() {
                   <li>• Credit card statements</li>
                   <li>• Transaction history exports</li>
                   <li>• Tabular data with dates, descriptions, and amounts</li>
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "image" && (
+            <div className="card">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                Import Bank Statement Image
+              </h2>
+              <FileUploadZone
+                type="image"
+                accept=".png,.jpg,.jpeg"
+                title="Image Statement Import"
+                description="Upload screenshots or photos of your bank statements to extract transactions"
+                icon={Image}
+              />
+
+              <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                <h4 className="font-medium text-blue-900 mb-2">
+                  Supported formats:
+                </h4>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• Bank statement screenshots (PNG, JPG, JPEG)</li>
+                  <li>• Mobile banking app screenshots</li>
+                  <li>• Transaction history photos</li>
+                  <li>• Clear, high-resolution images work best</li>
+                </ul>
+              </div>
+
+              <div className="mt-4 p-4 bg-yellow-50 rounded-lg">
+                <h4 className="font-medium text-yellow-900 mb-2">
+                  📸 Tips for better results:
+                </h4>
+                <ul className="text-sm text-yellow-800 space-y-1">
+                  <li>• Ensure text is clear and readable</li>
+                  <li>
+                    • Include transaction dates, descriptions, and amounts
+                  </li>
+                  <li>• Avoid blurry or low-resolution images</li>
+                  <li>• Good lighting improves OCR accuracy</li>
                 </ul>
               </div>
             </div>
