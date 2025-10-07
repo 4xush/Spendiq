@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { DollarSign, Eye, EyeOff } from "lucide-react";
+import { IndianRupee, Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
 import LoadingSpinner from "../components/LoadingSpinner";
 
@@ -105,7 +105,7 @@ function Register() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="flex justify-center">
-            <DollarSign className="h-12 w-12 text-primary-500" />
+            <IndianRupee className="h-12 w-12 text-primary-500" />
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Create your account

@@ -235,7 +235,7 @@ function Profile() {
           <div>
             <p className="text-sm font-medium text-gray-600">Member Since</p>
             <p className="text-lg font-semibold text-gray-900">
-              {new Date(user.createdAt).toLocaleDateString("en-IN", {
+              {new Date(user.createdAt).toLocaleDateString("en-US", {
                 year: "numeric",
                 month: "long",
                 day: "numeric",

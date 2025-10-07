@@ -10,7 +10,7 @@ import {
   LogOut,
   Menu,
   X,
-  DollarSign,
+  IndianRupee,
 } from "lucide-react";
 
 const navigation = [
@@ -47,7 +47,7 @@ function Layout({ children }) {
         <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-white shadow-xl">
           <div className="flex h-16 shrink-0 items-center justify-between px-6 border-b border-gray-200">
             <div className="flex items-center">
-              <DollarSign className="h-8 w-8 text-primary-500" />
+              <IndianRupee className="h-8 w-8 text-primary-500" />
               <span className="ml-2 text-xl font-bold text-gray-900">
                 SpendSense
               </span>
@@ -113,7 +113,7 @@ function Layout({ children }) {
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
         <div className="flex flex-col flex-grow bg-white border-r border-gray-200">
           <div className="flex h-16 shrink-0 items-center px-6 border-b border-gray-200">
-            <DollarSign className="h-8 w-8 text-primary-500" />
+            <IndianRupee className="h-8 w-8 text-primary-500" />
             <span className="ml-2 text-xl font-bold text-gray-900">
               SpendSense
             </span>
@@ -181,7 +181,7 @@ function Layout({ children }) {
               <Menu className="h-6 w-6" />
             </button>
             <div className="flex items-center">
-              <DollarSign className="h-8 w-8 text-primary-500" />
+              <IndianRupee className="h-8 w-8 text-primary-500" />
               <span className="ml-2 text-xl font-bold text-gray-900">
                 SpendSense
               </span>
