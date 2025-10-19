@@ -5,7 +5,6 @@ class GeminiService {
         if (!process.env.GEMINI_API_KEY) {
             throw new Error('GEMINI_API_KEY environment variable is not set')
         }
-        console.log('🔧 Initializing Gemini service with API key:', process.env.GEMINI_API_KEY ? 'Key found ✅' : 'No key ❌')
         this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
         // Use the latest stable Gemini model
         this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
@@ -14,8 +13,6 @@ class GeminiService {
     // Analyze receipt text and extract transaction data
     async analyzeReceipt(ocrText) {
         try {
-            // console.log('🔍 Analyzing receipt with Gemini API...')
-            // console.log('📝 OCR Text length:', ocrText?.length || 0)
 
             const prompt = `
         Analyze the following receipt text and extract transaction information.
@@ -47,10 +44,6 @@ class GeminiService {
             const result = await this.model.generateContent(prompt)
             const response = await result.response
             const text = response.text()
-
-            // console.log('✅ Gemini API response received')
-            console.log('📄 Raw response:', text)
-
             try {
                 // Clean up the response to extract JSON
                 let cleanText = text.trim()
@@ -59,7 +52,6 @@ class GeminiService {
                 cleanText = cleanText.replace(/```json\s*/g, '').replace(/```\s*$/g, '')
 
                 const extractedData = JSON.parse(cleanText)
-                // console.log('📊 Parsed transaction data:', JSON.stringify(extractedData, null, 2))
                 return extractedData
             } catch (parseError) {
                 console.error(' Failed to parse Gemini response:', parseError)
@@ -163,11 +155,8 @@ class GeminiService {
             // Check if we have meaningful text to analyze
             const cleanText = pdfText.trim()
             if (cleanText.length < 10) {
-                console.log('⚠️ Warning: Very little text provided to AI for analysis')
                 return []
             }
-
-            console.log(`🤖 Analyzing ${cleanText.length} characters of bank statement text`)
 
             const prompt = `
         Analyze this bank statement text and extract all transactions.
@@ -213,8 +202,6 @@ class GeminiService {
                 } else if (jsonText.startsWith('```') && jsonText.endsWith('```')) {
                     jsonText = jsonText.slice(3, -3).trim(); // Remove generic ```
                 }
-
-                console.log('Extracted JSON text:', jsonText);
 
                 const transactions = JSON.parse(jsonText)
                 return Array.isArray(transactions) ? transactions : []
@@ -270,7 +257,6 @@ class GeminiService {
 
                 if (isRetryable) {
                     const delay = baseDelay * Math.pow(2, attempt - 1) + Math.random() * 1000
-                    console.log(`🔄 Retry attempt ${attempt}/${maxRetries} after ${delay}ms delay due to: ${error.message}`)
                     await new Promise(resolve => setTimeout(resolve, delay))
                 } else {
                     throw error

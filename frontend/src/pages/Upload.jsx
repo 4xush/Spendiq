@@ -658,16 +658,6 @@ function Upload() {
           {/* Results Area */}
           <div className="space-y-6">
             <ProcessingStatus uploading={uploading} />
-
-            {/* <UploadResults
-              uploadResults={uploadResults}
-              showTransactionConfirmation={showTransactionConfirmation}
-              navigate={navigate}
-              getStatusIcon={getStatusIcon}
-              getStatusText={getStatusText}
-              onQuickAdd={handleQuickAdd}
-              onQuickSkip={handleQuickSkip}
-            /> */}
             <UploadResults
               uploadResults={uploadResults}
               showTransactionConfirmation={showTransactionConfirmation}

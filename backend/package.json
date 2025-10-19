@@ -1,5 +1,5 @@
 {
-  "name": "personal-finance-backend",
+  "name": "Spendiq-backend",
   "version": "1.0.0",
   "description": "Personal Finance Assistant Backend API",
   "main": "src/server.js",
