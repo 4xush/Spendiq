@@ -2,7 +2,7 @@ import { body, validationResult } from 'express-validator'
 import User from '../models/User.js'
 import { generateToken } from '../utils/jwt.js'
 
-// Register validation rules
+// Register validation rules - kept for reference but not used anymore
 export const registerValidation = [
     body('name')
         .trim()
@@ -30,57 +30,34 @@ export const loginValidation = [
         .withMessage('Password is required')
 ]
 
-// Register user
+// Register user - DISABLED
 export const register = async (req, res) => {
-    try {
-        // Check validation results
-        const errors = validationResult(req)
-        if (!errors.isEmpty()) {
-            return res.status(400).json({
-                error: 'Validation failed',
-                details: errors.array()
-            })
-        }
-
-        const { name, email, password } = req.body
-
-        // Check if user already exists
-        const existingUser = await User.findOne({ email })
-        if (existingUser) {
-            return res.status(400).json({
-                error: 'User with this email already exists'
-            })
-        }
-
-        // Create new user
-        const user = new User({
-            name,
-            email,
-            password
-        })
-
-        await user.save()
-
-        // Generate JWT token
-        const token = generateToken(user._id)
-
-        res.status(201).json({
-            message: 'User registered successfully',
-            token,
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                preferences: user.preferences
-            }
-        })
-    } catch (error) {
-        console.error('Registration error:', error)
-        res.status(500).json({
-            error: 'Failed to register user'
-        })
-    }
+    // Temporarily disabled - only Google OAuth registration is allowed
+    return res.status(403).json({
+        error: 'Direct registration is disabled. Please sign up with Google.'
+    });
 }
+
+// Handle Google OAuth callback
+export const googleCallback = async (req, res) => {
+    try {
+        // User is already attached to req by passport
+        const token = generateToken(req.user._id);
+
+        // Set token in cookie
+        res.cookie('auth_token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+
+        // Redirect to frontend with token
+        res.redirect(`${process.env.FRONTEND_URL}/oauth/callback?token=${token}`);
+    } catch (error) {
+        console.error('Google auth error:', error);
+        res.redirect(`${process.env.FRONTEND_URL}/login?error=google_auth_failed`);
+    }
+};
 
 // Login user
 export const login = async (req, res) => {
@@ -98,6 +75,20 @@ export const login = async (req, res) => {
 
         // Find user by email
         const user = await User.findOne({ email })
+
+        // Check if user exists
+        if (!user) {
+            return res.status(401).json({
+                error: 'Invalid credentials'
+            })
+        }
+
+        // For users created with Google OAuth, prevent password login
+        if (user.authType === 'google' && !user.password) {
+            return res.status(400).json({
+                error: 'This account was created with Google. Please sign in with Google.'
+            })
+        }
         if (!user) {
             return res.status(400).json({
                 error: 'Invalid credentials'

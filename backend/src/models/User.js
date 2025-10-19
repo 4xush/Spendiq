@@ -18,8 +18,24 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: [true, 'Password is required'],
+        required: function () {
+            // Password only required if not using OAuth
+            return !this.googleId;
+        },
         minlength: [6, 'Password must be at least 6 characters long']
+    },
+    googleId: {
+        type: String,
+        unique: true,
+        sparse: true
+    },
+    picture: {
+        type: String
+    },
+    authType: {
+        type: String,
+        enum: ['local', 'google'],
+        default: 'local'
     },
     preferences: {
         currency: {
@@ -37,7 +53,8 @@ const userSchema = new mongoose.Schema({
 
 // Hash password before saving
 userSchema.pre('save', async function (next) {
-    if (!this.isModified('password')) return next()
+    // Only hash password if it's modified and not using OAuth
+    if (!this.isModified('password') || this.googleId) return next()
 
     try {
         const salt = await bcrypt.genSalt(12)
@@ -47,6 +64,15 @@ userSchema.pre('save', async function (next) {
         next(error)
     }
 })
+
+// Method to compare password for login
+userSchema.methods.comparePassword = async function (candidatePassword) {
+    try {
+        return await bcrypt.compare(candidatePassword, this.password)
+    } catch (error) {
+        throw new Error(error)
+    }
+}
 
 // Compare password method
 userSchema.methods.comparePassword = async function (candidatePassword) {

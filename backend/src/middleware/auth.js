@@ -1,9 +1,13 @@
 import jwt from 'jsonwebtoken'
+import passport from 'passport'
 import User from '../models/User.js'
 
+// Authentication middleware using both JWT and Passport
 const auth = async (req, res, next) => {
     try {
-        const token = req.header('Authorization')?.replace('Bearer ', '')
+        // Check for token in Authorization header
+        const token = req.header('Authorization')?.replace('Bearer ', '') ||
+            req.cookies?.auth_token // Also check for token in cookies
 
         if (!token) {
             return res.status(401).json({
@@ -11,6 +15,7 @@ const auth = async (req, res, next) => {
             })
         }
 
+        // Verify the token
         const decoded = jwt.verify(token, process.env.JWT_SECRET)
         const user = await User.findById(decoded.userId).select('-password')
 
@@ -40,4 +45,8 @@ const auth = async (req, res, next) => {
     }
 }
 
+// Middleware to authenticate using Google OAuth
+const googleAuth = passport.authenticate('google', { session: false })
+
 export default auth
+export { googleAuth }
