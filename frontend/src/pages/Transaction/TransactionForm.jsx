@@ -48,7 +48,7 @@ const TransactionForm = ({ onSubmit, onCancel, isSubmitting = false }) => {
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4"
       onClick={(e) => e.target === e.currentTarget && onCancel()}
     >
@@ -71,7 +71,11 @@ const TransactionForm = ({ onSubmit, onCancel, isSubmitting = false }) => {
 
         {/* Scrollable Form Content */}
         <div className="overflow-y-auto flex-1">
-          <form onSubmit={handleSubmit} id="transaction-form" className="p-4 sm:p-6">
+          <form
+            onSubmit={handleSubmit}
+            id="transaction-form"
+            className="p-4 sm:p-6"
+          >
             <div className="space-y-4">
               {/* Description */}
               <div>
@@ -117,10 +121,11 @@ const TransactionForm = ({ onSubmit, onCancel, isSubmitting = false }) => {
                 </label>
                 <div className="relative">
                   <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400 pointer-events-none" />
-                  <select 
-                    name="category" 
+                  <select
+                    name="category"
                     className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
                     required
+                    defaultValue="Food & Dining"
                   >
                     <option value="">Select Category</option>
                     {CATEGORIES.map((category) => (
@@ -130,8 +135,18 @@ const TransactionForm = ({ onSubmit, onCancel, isSubmitting = false }) => {
                     ))}
                   </select>
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                    <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <svg
+                      className="h-4 w-4 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </div>
                 </div>
@@ -153,7 +168,9 @@ const TransactionForm = ({ onSubmit, onCancel, isSubmitting = false }) => {
                     />
                     <div className="text-center">
                       <div className="text-2xl mb-1">💸</div>
-                      <div className="text-sm font-medium text-gray-900">Expense</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        Expense
+                      </div>
                     </div>
                   </label>
                   <label className="relative flex items-center justify-center p-3 sm:p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors has-[:checked]:border-green-500 has-[:checked]:bg-green-50">
@@ -165,7 +182,9 @@ const TransactionForm = ({ onSubmit, onCancel, isSubmitting = false }) => {
                     />
                     <div className="text-center">
                       <div className="text-2xl mb-1">💰</div>
-                      <div className="text-sm font-medium text-gray-900">Income</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        Income
+                      </div>
                     </div>
                   </label>
                 </div>

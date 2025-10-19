@@ -8,6 +8,8 @@ import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 
 import connectDB from './config/database.js'
+// Import Redis client
+import './config/redisClient.js'
 import authRoutes from './routes/auth.js'
 import transactionRoutes from './routes/transactions.js'
 import categoryRoutes from './routes/categories.js'
@@ -106,6 +108,47 @@ app.get('/api/health', (req, res) => {
         timestamp: new Date().toISOString(),
         uptime: process.uptime()
     })
+})
+
+// Redis cache test endpoint
+app.get('/api/cache/test', async (req, res) => {
+    try {
+        const { client, setCache, getCache } = await import('./config/redisClient.js')
+
+        // Test if Redis client is connected
+        if (client.status !== 'ready') {
+            return res.status(500).json({
+                status: 'error',
+                message: 'Redis client is not connected',
+                connectionStatus: client.status
+            })
+        }
+
+        // Test set operation
+        const testKey = 'test:connection'
+        const testValue = {
+            message: 'Redis cache is working',
+            timestamp: new Date().toISOString()
+        }
+
+        await setCache(testKey, testValue, 60) // 60 second TTL
+
+        // Test get operation
+        const cachedValue = await getCache(testKey)
+
+        res.json({
+            status: 'success',
+            message: 'Redis cache test successful',
+            cached: cachedValue
+        })
+    } catch (error) {
+        console.error('Redis test error:', error)
+        res.status(500).json({
+            status: 'error',
+            message: 'Redis cache test failed',
+            error: error.message
+        })
+    }
 })
 
 // 404 handler
