@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useDashboard } from "../context/DashboardContext";
 import {
   TrendingUp,
   TrendingDown,
@@ -26,89 +27,19 @@ import TrendChartMobile from "./Dashboard/TrendChart_Mobile";
 
 function DashboardMobile() {
   const { user } = useAuth();
-  const [summary, setSummary] = useState(null);
-  const [recentTransactions, setRecentTransactions] = useState([]);
-  const [categoryData, setCategoryData] = useState([]);
-  const [trendData, setTrendData] = useState([]);
-  const [recentP2P, setRecentP2P] = useState([]);
-  const [p2pSummary, setP2pSummary] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const {
+    summary,
+    recentTransactions,
+    categoryData,
+    trendData,
+    recentP2P,
+    p2pSummary,
+    loading,
+    formatCurrency,
+    formatCurrencyCompact,
+    formatDate,
+  } = useDashboard();
   const [activeTab, setActiveTab] = useState("overview");
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-
-      // Create date range for last 7 days
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 7);
-
-      const startDateStr = startDate.toISOString().split("T")[0];
-      const endDateStr = endDate.toISOString().split("T")[0];
-
-      // Fetch all dashboard data
-      const [
-        summaryResponse,
-        transactionsResponse,
-        p2pTransactionsResponse,
-        p2pSummaryResponse,
-        categoryResponse,
-        trendResponse,
-      ] = await Promise.all([
-        api.get("/analytics/summary"),
-        api.get("/transactions?limit=5"),
-        api.get("/transactions/p2p?limit=3"),
-        api.get("/transactions/p2p/summary"),
-        api.get("/analytics/by-category?limit=6"),
-        api.get(
-          `/analytics/by-date?startDate=${startDateStr}&endDate=${endDateStr}&groupBy=day`
-        ),
-      ]);
-
-      setSummary(summaryResponse.data.summary);
-      setRecentTransactions(transactionsResponse.data.transactions || []);
-      setRecentP2P(p2pTransactionsResponse.data.transactions || []);
-      setP2pSummary(p2pSummaryResponse.data.summary);
-      setCategoryData(categoryResponse.data.categories?.slice(0, 6) || []);
-      setTrendData(trendResponse.data.trends || []);
-    } catch (error) {
-      console.error("❌ Failed to fetch dashboard data:", error);
-      // Set empty arrays as fallback
-      setCategoryData([]);
-      setTrendData([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const formatCurrencyCompact = (amount) => {
-    if (amount >= 100000) {
-      return `₹${(amount / 100000).toFixed(1)}L`;
-    } else if (amount >= 1000) {
-      return `₹${(amount / 1000).toFixed(1)}K`;
-    }
-    return formatCurrency(amount);
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    });
-  };
 
   if (loading) {
     return (
@@ -290,7 +221,7 @@ function DashboardMobile() {
                         </p>
                         <p className="text-sm font-bold text-orange-700">
                           {formatCurrencyCompact(
-                            p2pSummary?.totalBorrowed || 0
+                            p2pSummary?.totalBorrowed || 0,
                           )}
                         </p>
                       </div>

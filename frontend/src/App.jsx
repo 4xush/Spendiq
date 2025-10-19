@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./context/AuthContext";
+import { DashboardProvider } from "./context/DashboardContext";
 import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard_Responsive";
 import Transactions from "./pages/Transactions";
@@ -35,14 +36,19 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Layout>
-                    <Routes>
-                      <Route path="/" element={<Dashboard />} />
-                      <Route path="/transactions" element={<Transactions />} />
-                      <Route path="/analytics" element={<Analytics />} />
-                      <Route path="/upload" element={<Upload />} />
-                      <Route path="/p2p" element={<P2PDashboard />} />
-                      <Route path="/profile" element={<Profile />} />
-                    </Routes>
+                    <DashboardProvider>
+                      <Routes>
+                        <Route path="/" element={<Dashboard />} />
+                        <Route
+                          path="/transactions"
+                          element={<Transactions />}
+                        />
+                        <Route path="/analytics" element={<Analytics />} />
+                        <Route path="/upload" element={<Upload />} />
+                        <Route path="/p2p" element={<P2PDashboard />} />
+                        <Route path="/profile" element={<Profile />} />
+                      </Routes>
+                    </DashboardProvider>
                   </Layout>
                 </ProtectedRoute>
               }

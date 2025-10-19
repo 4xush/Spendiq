@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useRef, useState , useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useDashboard } from "../context/DashboardContext";
 import {
   TrendingUp,
   TrendingDown,
@@ -12,7 +13,6 @@ import {
   ArrowDownLeft,
   Clock,
 } from "lucide-react";
-import api from "../utils/api";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { Link } from "react-router-dom";
 import RecentTransactions from "./Dashboard/RecentTransactions";
@@ -21,79 +21,23 @@ import SevenDayTrend from "./Dashboard/SevenDayTrend";
 
 function Dashboard() {
   const { user } = useAuth();
-  const [summary, setSummary] = useState(null);
-  const [recentTransactions, setRecentTransactions] = useState([]);
-  const [categoryData, setCategoryData] = useState([]);
-  const [trendData, setTrendData] = useState([]);
-  const [recentP2P, setRecentP2P] = useState([]);
-  const [p2pSummary, setP2pSummary] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const {
+    summary,
+    recentTransactions,
+    categoryData,
+    trendData,
+    recentP2P,
+    p2pSummary,
+    loading,
+    formatCurrency,
+    formatDate,
+  } = useDashboard();
+
   const [leftWidth, setLeftWidth] = useState(40);
   const [isResizing, setIsResizing] = useState(false);
   const containerRef = useRef(null);
   const startXRef = useRef(0);
   const startWidthRef = useRef(35);
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-
-      // Fetch summary
-      const summaryResponse = await api.get("/analytics/summary");
-      setSummary(summaryResponse.data.summary);
-
-      // Fetch recent transactions
-      const transactionsResponse = await api.get("/transactions?limit=3");
-      setRecentTransactions(transactionsResponse.data.transactions);
-
-      // Fetch recent P2P transactions
-      const p2pTransactionsResponse = await api.get(
-        "/transactions/p2p?limit=3"
-      );
-      setRecentP2P(p2pTransactionsResponse.data.transactions || []);
-
-      // Fetch P2P summary
-      const p2pSummaryResponse = await api.get("/transactions/p2p/summary");
-      setP2pSummary(p2pSummaryResponse.data.summary);
-
-      // Fetch category data
-      const categoryResponse = await api.get("/analytics/by-category");
-      setCategoryData(categoryResponse.data.categories.slice(0, 6));
-
-      // Fetch trend data (last 30 days for expandable chart)
-      const endDate = new Date().toISOString().split("T")[0];
-      const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0];
-      const trendResponse = await api.get(
-        `/analytics/by-date?startDate=${startDate}&endDate=${endDate}&groupBy=day`
-      );
-      setTrendData(trendResponse.data.trends);
-    } catch (error) {
-      console.error("Failed to fetch dashboard data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    });
-  };
 
   const handleMouseDown = (e) => {
     e.preventDefault();
@@ -113,7 +57,7 @@ function Dashboard() {
       const deltaPercentage = (deltaX / containerWidth) * 100;
       const newWidth = Math.max(
         20,
-        Math.min(40, startWidthRef.current + deltaPercentage)
+        Math.min(40, startWidthRef.current + deltaPercentage),
       );
 
       setLeftWidth(newWidth);
@@ -343,7 +287,7 @@ function Dashboard() {
             {recentP2P.map((transaction) => {
               const p2p = transaction.personToPerson;
               const isOutgoing = ["lent", "gift_given", "payment"].includes(
-                p2p.type
+                p2p.type,
               );
 
               return (
@@ -375,8 +319,8 @@ function Dashboard() {
                             p2p.status === "pending"
                               ? "bg-yellow-100 text-yellow-800"
                               : p2p.status === "completed"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-gray-100 text-gray-800"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-gray-100 text-gray-800"
                           }`}
                         >
                           {p2p.status}
