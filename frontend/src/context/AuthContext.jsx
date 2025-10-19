@@ -224,8 +224,9 @@ export function AuthProvider({ children }) {
 
   // Initiate Google OAuth login process
   const initiateGoogleLogin = () => {
-    const backendUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
-    window.location.href = `${backendUrl}/api/auth/google`;
+    const backendUrl =
+      import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+    window.location.href = `${backendUrl}/auth/google`;
   };
 
   const value = {
