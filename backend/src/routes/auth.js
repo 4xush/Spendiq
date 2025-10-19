@@ -9,6 +9,8 @@ import {
     loginValidation
 } from '../controllers/authController.js'
 import auth from '../middleware/auth.js'
+import cacheMiddleware from '../middleware/cache.js'
+import invalidateCacheMiddleware from '../middleware/cacheInvalidation.js'
 
 const router = express.Router()
 
@@ -26,7 +28,16 @@ router.get('/google/callback',
 )
 
 // Protected routes
-router.get('/profile', auth, getProfile)
-router.put('/profile', auth, updateProfile)
+router.get('/profile',
+    auth,
+    cacheMiddleware('auth:profile', 60 * 2, // Cache for 2 minutes
+        (req) => `auth:profile:${req.user._id}`
+    ),
+    getProfile
+)
+router.put('/profile',
+    auth,
+    invalidateCacheMiddleware(['auth:profile:*']),
+    updateProfile)
 
 export default router

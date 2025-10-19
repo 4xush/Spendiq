@@ -1,5 +1,6 @@
 import { createContext, useContext, useReducer, useEffect } from "react";
 import api from "../utils/api";
+import cachedApi, { clearCache } from "../utils/cachedApi";
 
 const AuthContext = createContext();
 
@@ -77,15 +78,21 @@ function authReducer(state, action) {
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  const loadUser = async () => {
+  const loadUser = async (options = {}) => {
+    const { forceRefresh = false } = options;
     try {
-      const response = await api.get("/auth/profile");
-      dispatch({ type: "LOAD_USER_SUCCESS", payload: response.data.user });
+      const data = await cachedApi.get("/auth/profile", {
+        cacheDuration: 30000, // Cache for 30 seconds on client side
+        forceRefresh,
+      });
+      dispatch({ type: "LOAD_USER_SUCCESS", payload: data.user });
+      return data.user;
     } catch (error) {
       dispatch({
         type: "LOAD_USER_FAILURE",
         payload: error.response?.data?.error || "Failed to load user",
       });
+      return null;
     }
   };
 
@@ -159,6 +166,8 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
+    // Clear cached API data on logout
+    clearCache();
     dispatch({ type: "LOGOUT" });
   };
 
@@ -170,10 +179,13 @@ export function AuthProvider({ children }) {
   const processOAuthLogin = async (token) => {
     dispatch({ type: "LOGIN_START" });
     try {
+      // Clear any existing cache before processing new login
+      clearCache();
+
       // Set the token
       api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-      // Get user data with the token
+      // Get user data with the token (bypass cache for fresh login)
       const response = await api.get("/auth/profile");
 
       dispatch({

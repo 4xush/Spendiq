@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import api from '../utils/api';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import cachedApi from "../utils/cachedApi";
 
 const DashboardContext = createContext(null);
 
@@ -49,6 +49,7 @@ export function DashboardProvider({ children }) {
       const endDateStr = endDate.toISOString().split("T")[0];
 
       // Fetch all dashboard data in parallel
+      // Using the cached API for better performance and reduced backend calls
       const [
         summaryResponse,
         transactionsResponse,
@@ -57,22 +58,22 @@ export function DashboardProvider({ children }) {
         categoryResponse,
         trendResponse,
       ] = await Promise.all([
-        api.get("/analytics/summary"),
-        api.get("/transactions?limit=5"),
-        api.get("/transactions/p2p?limit=3"),
-        api.get("/transactions/p2p/summary"),
-        api.get("/analytics/by-category"),
-        api.get(
-          `/analytics/by-date?startDate=${startDateStr}&endDate=${endDateStr}&groupBy=day`
+        cachedApi.get("/analytics/summary", { cacheDuration: 60000 }), // 1 minute cache
+        cachedApi.get("/transactions?limit=5", { cacheDuration: 30000 }), // 30 seconds cache
+        cachedApi.get("/transactions/p2p?limit=3", { cacheDuration: 30000 }),
+        cachedApi.get("/transactions/p2p/summary", { cacheDuration: 60000 }),
+        cachedApi.get("/analytics/by-category", { cacheDuration: 60000 }),
+        cachedApi.get(
+          `/analytics/by-date?startDate=${startDateStr}&endDate=${endDateStr}&groupBy=day`,
+          { cacheDuration: 60000 }
         ),
       ]);
-
-      setSummary(summaryResponse.data.summary);
-      setRecentTransactions(transactionsResponse.data.transactions || []);
-      setRecentP2P(p2pTransactionsResponse.data.transactions || []);
-      setP2pSummary(p2pSummaryResponse.data.summary);
-      setCategoryData(categoryResponse.data.categories?.slice(0, 6) || []);
-      setTrendData(trendResponse.data.trends || []);
+      setSummary(summaryResponse.summary);
+      setRecentTransactions(transactionsResponse.transactions || []);
+      setRecentP2P(p2pTransactionsResponse.transactions || []);
+      setP2pSummary(p2pSummaryResponse.summary);
+      setCategoryData(categoryResponse.categories?.slice(0, 6) || []);
+      setTrendData(trendResponse.trends || []);
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
       // Set empty arrays as fallback
@@ -119,7 +120,7 @@ export function DashboardProvider({ children }) {
 export function useDashboard() {
   const context = useContext(DashboardContext);
   if (context === null) {
-    throw new Error('useDashboard must be used within a DashboardProvider');
+    throw new Error("useDashboard must be used within a DashboardProvider");
   }
   return context;
 }
