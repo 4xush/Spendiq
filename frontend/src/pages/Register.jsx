@@ -18,7 +18,7 @@ function Register() {
   const [passwordStrength, setPasswordStrength] = useState(0);
   const navigate = useNavigate();
 
-  const { user, register, error, clearError } = useAuth();
+  const { user, register, error, clearError, initiateGoogleLogin } = useAuth();
 
   // Redirect if already logged in
   useEffect(() => {
@@ -55,37 +55,21 @@ function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Show a toast message informing the user about Google OAuth requirement
+    toast.error(
+      "Direct registration is temporarily disabled. Please sign up with Google."
+    );
 
-    if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
-    }
-
-    if (passwordStrength < 3) {
-      toast.error(
-        "Password is too weak. Please include uppercase, lowercase, and numbers."
-      );
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      const result = await register(
-        formData.name,
-        formData.email,
-        formData.password
-      );
-      if (result.success) {
-        toast.success("Account created successfully! Welcome!");
-      } else {
-        toast.error(result.error);
+    // Wait a moment before showing the Google OAuth button animation
+    setTimeout(() => {
+      const googleButton = document.getElementById("google-signup-button");
+      if (googleButton) {
+        googleButton.classList.add("animate-pulse");
+        setTimeout(() => {
+          googleButton.classList.remove("animate-pulse");
+        }, 1500);
       }
-    } catch (error) {
-      toast.error("An unexpected error occurred");
-    } finally {
-      setIsSubmitting(false);
-    }
+    }, 500);
   };
 
   const getPasswordStrengthColor = () => {
@@ -247,24 +231,58 @@ function Register() {
             </div>
           </div>
 
-          <div>
+          <div className="space-y-4">
+            <div className="bg-yellow-50 border border-yellow-400 rounded-md p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="h-5 w-5 text-yellow-400"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 6a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 6zm0 9a1 1 0 100-2 1 1 0 000 2z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-yellow-800">
+                    Notice
+                  </h3>
+                  <div className="mt-2 text-sm text-yellow-700">
+                    <p>
+                      Direct registration is temporarily disabled. Please sign
+                      up with Google.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button
+              id="google-signup-button"
+              type="button"
+              onClick={initiateGoogleLogin}
+              className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+            >
+              <img
+                src="https://developers.google.com/identity/images/g-logo.png"
+                alt="Google logo"
+                className="h-6 w-6 mr-2"
+              />
+              Sign up with Google
+            </button>
+
             <button
               type="submit"
-              disabled={
-                isSubmitting ||
-                formData.password !== formData.confirmPassword ||
-                passwordStrength < 3
-              }
+              disabled={true}
               className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? (
-                <div className="flex items-center justify-center">
-                  <LoadingSpinner size="small" className="mr-2" />
-                  Creating account...
-                </div>
-              ) : (
-                "Create account"
-              )}
+              Create account
             </button>
           </div>
 

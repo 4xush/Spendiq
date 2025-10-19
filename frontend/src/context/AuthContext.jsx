@@ -8,6 +8,7 @@ const initialState = {
   token: localStorage.getItem("token"),
   loading: true,
   error: null,
+  authType: localStorage.getItem("authType") || "local", // "local" or "google"
 };
 
 function authReducer(state, action) {
@@ -21,10 +22,12 @@ function authReducer(state, action) {
       };
     case "LOGIN_SUCCESS":
     case "REGISTER_SUCCESS":
+    case "OAUTH_LOGIN_SUCCESS":
       return {
         ...state,
         user: action.payload.user,
         token: action.payload.token,
+        authType: action.payload.authType || "local",
         loading: false,
         error: null,
       };
@@ -42,6 +45,7 @@ function authReducer(state, action) {
         ...state,
         user: null,
         token: null,
+        authType: "local",
         loading: false,
         error: null,
       };
@@ -103,12 +107,14 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (state.token) {
       localStorage.setItem("token", state.token);
+      localStorage.setItem("authType", state.authType);
       api.defaults.headers.common["Authorization"] = `Bearer ${state.token}`;
     } else {
       localStorage.removeItem("token");
+      localStorage.removeItem("authType");
       delete api.defaults.headers.common["Authorization"];
     }
-  }, [state.token]);
+  }, [state.token, state.authType]);
 
   const login = async (email, password) => {
     dispatch({ type: "LOGIN_START" });
@@ -160,16 +166,53 @@ export function AuthProvider({ children }) {
     dispatch({ type: "CLEAR_ERROR" });
   };
 
+  // Process OAuth login (used by OAuthCallback component)
+  const processOAuthLogin = async (token) => {
+    dispatch({ type: "LOGIN_START" });
+    try {
+      // Set the token
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+      // Get user data with the token
+      const response = await api.get("/auth/profile");
+
+      dispatch({
+        type: "OAUTH_LOGIN_SUCCESS",
+        payload: {
+          user: response.data.user,
+          token,
+          authType: "google",
+        },
+      });
+
+      return { success: true };
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.error || "Google authentication failed";
+      dispatch({ type: "LOGIN_FAILURE", payload: errorMessage });
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  // Initiate Google OAuth login process
+  const initiateGoogleLogin = () => {
+    const backendUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    window.location.href = `${backendUrl}/api/auth/google`;
+  };
+
   const value = {
     user: state.user,
     token: state.token,
     loading: state.loading,
     error: state.error,
+    authType: state.authType,
     login,
     register,
     logout,
     clearError,
     loadUser,
+    processOAuthLogin,
+    initiateGoogleLogin,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

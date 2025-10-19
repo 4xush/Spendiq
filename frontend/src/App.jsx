@@ -10,6 +10,7 @@ import Upload from "./pages/Upload";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
+import OAuthCallback from "./pages/OAuthCallback";
 import P2PDashboard from "./pages/P2P/P2PDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -27,10 +28,16 @@ function App() {
                 color: "#fff",
               },
             }}
+            gutter={8}
+            containerClassName="toast-container"
+            containerStyle={{}}
+            // Prevent duplicate toasts with the same message
+            toastId={(t) => t.message}
           />
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/oauth/callback" element={<OAuthCallback />} />
             <Route
               path="/*"
               element={
