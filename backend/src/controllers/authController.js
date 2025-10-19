@@ -176,3 +176,23 @@ export const updateProfile = async (req, res) => {
         })
     }
 }
+
+// Logout user
+export const logout = async (req, res) => {
+    try {
+        // In a stateless JWT auth system, we don't need to do anything server-side
+        // except invalidate any server-side caches
+
+        // Clear auth cookies if they exist
+        res.clearCookie('auth_token');
+
+        res.json({
+            message: 'Logout successful'
+        });
+    } catch (error) {
+        console.error('Logout error:', error);
+        res.status(500).json({
+            error: 'Failed to logout'
+        });
+    }
+}

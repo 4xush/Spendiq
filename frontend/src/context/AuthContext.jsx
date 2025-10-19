@@ -165,10 +165,26 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const logout = () => {
-    // Clear cached API data on logout
-    clearCache();
-    dispatch({ type: "LOGOUT" });
+  const logout = async () => {
+    try {
+      // Clear cached API data on logout
+      clearCache();
+
+      // Call the backend logout endpoint if we have a token
+      if (state.token) {
+        await api.post("/auth/logout");
+      }
+
+      // Always dispatch logout action, even if backend call fails
+      dispatch({ type: "LOGOUT" });
+
+      return { success: true };
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Still logout locally even if the server request fails
+      dispatch({ type: "LOGOUT" });
+      return { success: true };
+    }
   };
 
   const clearError = () => {

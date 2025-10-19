@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import toast from "react-hot-toast";
 import {
   LayoutDashboard,
   Receipt,
@@ -39,9 +40,29 @@ function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      // Show loading toast
+      const loadingToast = toast.loading("Signing out...");
+
+      // Call the logout function from AuthContext
+      const result = await logout();
+
+      // Dismiss loading toast
+      toast.dismiss(loadingToast);
+
+      if (result.success) {
+        toast.success("Successfully signed out!");
+      }
+
+      // Navigate to login page
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error("Error during logout:", error);
+      toast.error("There was a problem signing out. Please try again.");
+      // Still navigate to login page even if there was an error
+      navigate("/login", { replace: true });
+    }
   };
 
   const isActive = (href) => location.pathname === href;
@@ -85,7 +106,9 @@ function Layout({ children }) {
                   <p className="text-sm font-semibold text-gray-900 truncate">
                     {user?.name || "User"}
                   </p>
-                  <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                  <p className="text-xs text-gray-500 truncate">
+                    {user?.email}
+                  </p>
                 </div>
               </div>
             </div>
@@ -227,10 +250,16 @@ function Layout({ children }) {
                   : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
               }`}
             >
-              <item.icon className={`h-5 w-5 ${isActive(item.href) ? "stroke-[2.5]" : ""}`} />
-              <span className={`text-[10px] font-medium mt-0.5 ${
-                isActive(item.href) ? "font-semibold" : ""
-              }`}>
+              <item.icon
+                className={`h-5 w-5 ${
+                  isActive(item.href) ? "stroke-[2.5]" : ""
+                }`}
+              />
+              <span
+                className={`text-[10px] font-medium mt-0.5 ${
+                  isActive(item.href) ? "font-semibold" : ""
+                }`}
+              >
                 {item.name}
               </span>
             </Link>

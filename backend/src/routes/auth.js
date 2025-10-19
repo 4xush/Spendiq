@@ -6,7 +6,8 @@ import {
     getProfile,
     updateProfile,
     googleCallback,
-    loginValidation
+    loginValidation,
+    logout
 } from '../controllers/authController.js'
 import auth from '../middleware/auth.js'
 import cacheMiddleware from '../middleware/cache.js'
@@ -39,5 +40,11 @@ router.put('/profile',
     auth,
     invalidateCacheMiddleware(['auth:profile:*']),
     updateProfile)
+
+// Logout route
+router.post('/logout',
+    auth,
+    invalidateCacheMiddleware(['auth:profile:*']),
+    logout)
 
 export default router
