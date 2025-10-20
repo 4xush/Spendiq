@@ -8,11 +8,10 @@ import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import cookieParser from 'cookie-parser'
 import passport from 'passport'
+import session from 'express-session'
 
 import connectDB from './config/database.js'
-// Import Redis client
 import './config/redisClient.js'
-// Import Passport config
 import './config/passport.js'
 import authRoutes from './routes/auth.js'
 import transactionRoutes from './routes/transactions.js'
@@ -93,8 +92,22 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 // Cookie parser middleware
 app.use(cookieParser())
 
+// Session middleware
+app.use(
+    session({
+        secret: process.env.SESSION_SECRET || 'keyboardcat',
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+            secure: process.env.NODE_ENV === 'production', // must be true on Render (uses HTTPS)
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        },
+    })
+)
+
 // Passport middleware
 app.use(passport.initialize())
+app.use(passport.session())
 
 // Logging middleware
 if (process.env.NODE_ENV === 'development') {
@@ -159,6 +172,17 @@ app.get('/api/cache/test', async (req, res) => {
             error: error.message
         })
     }
+})
+
+// Root route for Render deployment testing
+app.get('/', (req, res) => {
+    res.json({
+        status: 'success',
+        message: 'Spendiq API is running',
+        environment: process.env.NODE_ENV || 'development',
+        timestamp: new Date().toISOString(),
+        uptime: `${Math.floor(process.uptime() / 60)} minutes, ${Math.floor(process.uptime() % 60)} seconds`
+    })
 })
 
 // 404 handler
