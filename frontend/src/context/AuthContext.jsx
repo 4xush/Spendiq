@@ -198,6 +198,16 @@ export function AuthProvider({ children }) {
       // Clear any existing cache before processing new login
       clearCache();
 
+      // Explicitly store token in localStorage immediately to prevent issues
+      try {
+        localStorage.setItem("token", token);
+        localStorage.setItem("authType", "google");
+      } catch (e) {
+        console.warn("localStorage failed, using sessionStorage instead", e);
+        sessionStorage.setItem("token", token);
+        sessionStorage.setItem("authType", "google");
+      }
+
       // Set the token
       api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
@@ -213,7 +223,7 @@ export function AuthProvider({ children }) {
         },
       });
 
-      return { success: true };
+      return { success: true, user: response.data.user };
     } catch (error) {
       const errorMessage =
         error.response?.data?.error || "Google authentication failed";
