@@ -210,10 +210,38 @@ export function AuthProvider({ children }) {
 
       // Set the token
       api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      console.log("Set Authorization header, making API call to /auth/profile");
 
-      // Get user data with the token (bypass cache for fresh login)
-      const response = await api.get("/auth/profile");
+      // Make direct fetch request to diagnose API issues
+      const apiUrl =
+        import.meta.env.VITE_BACKEND_URL || "http://localhost:5000/api";
+      console.log("API URL:", apiUrl);
 
+      // Attempt direct fetch first to bypass axios
+      const directResponse = await fetch(`${apiUrl}/auth/profile`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // Include cookies if any
+      });
+
+      console.log("Direct fetch response status:", directResponse.status);
+      if (!directResponse.ok) {
+        const errorText = await directResponse.text();
+        console.error("API error response:", errorText);
+        throw new Error(
+          `API responded with status ${directResponse.status}: ${errorText}`
+        );
+      }
+
+      const directData = await directResponse.json();
+      console.log("Direct fetch successful, got user data:", directData);
+
+      // Continue with regular axios flow
+      const response = { data: directData };
+
+      console.log("Dispatching OAUTH_LOGIN_SUCCESS action");
       dispatch({
         type: "OAUTH_LOGIN_SUCCESS",
         payload: {
@@ -225,8 +253,28 @@ export function AuthProvider({ children }) {
 
       return { success: true, user: response.data.user };
     } catch (error) {
+      console.error("OAuth login error:", error);
+
+      // Detailed error logging
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        console.error("Error response data:", error.response.data);
+        console.error("Error response status:", error.response.status);
+        console.error("Error response headers:", error.response.headers);
+      } else if (error.request) {
+        // The request was made but no response was received
+        console.error("Error request:", error.request);
+        console.error("No response received from server");
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        console.error("Error message:", error.message);
+      }
+
       const errorMessage =
-        error.response?.data?.error || "Google authentication failed";
+        error.response?.data?.error ||
+        error.message ||
+        "Google authentication failed";
       dispatch({ type: "LOGIN_FAILURE", payload: errorMessage });
       return { success: false, error: errorMessage };
     }

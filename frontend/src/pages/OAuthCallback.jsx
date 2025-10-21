@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -12,8 +12,35 @@ function OAuthCallback() {
   const { processOAuthLogin } = useAuth();
   const [isProcessing, setIsProcessing] = useState(true);
 
+  // Add a counter to prevent infinite loops
+  const [attemptCount, setAttemptCount] = useState(0);
+
+  // Store whether we've already started processing
+  const processingRef = useRef(false);
+
   useEffect(() => {
+    // Prevent duplicate processing
+    if (processingRef.current) {
+      console.log("Already processing OAuth, skipping duplicate call");
+      return;
+    }
+
+    // Safety check for too many attempts
+    if (attemptCount > 2) {
+      console.error(
+        "Too many OAuth processing attempts, forcing redirect to login"
+      );
+      toast.error("Authentication process failed after multiple attempts");
+      navigate("/login", { replace: true });
+      return;
+    }
+
     const handleOAuthResponse = async () => {
+      // Set processing flag to prevent duplicate calls
+      processingRef.current = true;
+      setAttemptCount((prev) => prev + 1);
+      console.log(`OAuth processing attempt #${attemptCount + 1}`);
+
       try {
         console.log(
           "Starting OAuth process with token:",
@@ -34,11 +61,19 @@ function OAuthCallback() {
           return;
         }
 
+        // Store token directly in localStorage as additional backup
+        try {
+          localStorage.setItem("token", token);
+          console.log("Token saved directly to localStorage in OAuthCallback");
+        } catch (e) {
+          console.warn("Failed to save token to localStorage:", e);
+        }
+
         console.log("Calling processOAuthLogin with token");
         const result = await processOAuthLogin(token);
         console.log("processOAuthLogin result:", result);
 
-        if (result.success) {
+        if (result && result.success) {
           console.log("Login successful, navigating to dashboard...");
 
           // Successfully authenticated, quietly redirect to dashboard without toast
@@ -53,9 +88,12 @@ function OAuthCallback() {
           }, 1500);
         } else {
           // Only show error toast if there's an issue
-          console.log("Login failed with error:", result.error);
+          console.log(
+            "Login failed with error:",
+            result?.error || "Unknown error"
+          );
           toast.error(
-            result.error || "Authentication failed. Please try again."
+            result?.error || "Authentication failed. Please try again."
           );
           navigate("/login", { replace: true });
         }
@@ -67,11 +105,15 @@ function OAuthCallback() {
         navigate("/login", { replace: true });
       } finally {
         setIsProcessing(false);
+        // Reset processing flag after a delay to handle potential React re-renders
+        setTimeout(() => {
+          processingRef.current = false;
+        }, 2000);
       }
     };
 
     handleOAuthResponse();
-  }, [token, error, navigate, processOAuthLogin]);
+  }, [token, error, navigate, processOAuthLogin, attemptCount]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
