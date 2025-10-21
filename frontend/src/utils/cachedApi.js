@@ -26,14 +26,12 @@ export const getCached = async (url, options = {}) => {
 
     // Return cached data if available and not forcing refresh
     if (useCache && !forceRefresh && apiCache.data.has(cacheKey)) {
-        console.log(`[CachedAPI] Cache hit for: ${url}`);
-        return apiCache.data.get(cacheKey);
+                 return apiCache.data.get(cacheKey);
     }
 
     try {
         // Fetch fresh data from API
-        console.log(`[CachedAPI] Fetching: ${url}`);
-        const response = await api.get(url);
+                 const response = await api.get(url);
         const responseData = response.data;
 
         // Cache the response if caching is enabled
@@ -50,12 +48,10 @@ export const getCached = async (url, options = {}) => {
             const timeoutId = setTimeout(() => {
                 apiCache.data.delete(cacheKey);
                 apiCache.timeouts.delete(cacheKey);
-                console.log(`[CachedAPI] Cache expired for: ${url}`);
-            }, cacheDuration);
+                             }, cacheDuration);
 
             apiCache.timeouts.set(cacheKey, timeoutId);
-            console.log(`[CachedAPI] Cached for ${cacheDuration}ms: ${url}`);
-        }
+                     }
 
         return responseData;
     } catch (error) {
@@ -76,14 +72,12 @@ export const clearCache = (url) => {
             apiCache.timeouts.delete(url);
         }
         apiCache.data.delete(url);
-        console.log(`[CachedAPI] Cleared cache for: ${url}`);
-    } else {
+             } else {
         // Clear all cache
         apiCache.timeouts.forEach(timeoutId => clearTimeout(timeoutId));
         apiCache.data.clear();
         apiCache.timeouts.clear();
-        console.log('[CachedAPI] Cleared all cache');
-    }
+             }
 };
 
 // Export regular API for non-cached operations

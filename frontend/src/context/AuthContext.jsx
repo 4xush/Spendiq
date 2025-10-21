@@ -210,13 +210,11 @@ export function AuthProvider({ children }) {
 
       // Set the token
       api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      console.log("Set Authorization header, making API call to /auth/profile");
-
+       
       // Make direct fetch request to diagnose API issues
       const apiUrl =
         import.meta.env.VITE_BACKEND_URL || "http://localhost:5000/api";
-      console.log("API URL:", apiUrl);
-
+       
       // Attempt direct fetch first to bypass axios
       const directResponse = await fetch(`${apiUrl}/auth/profile`, {
         headers: {
@@ -226,8 +224,7 @@ export function AuthProvider({ children }) {
         credentials: "include", // Include cookies if any
       });
 
-      console.log("Direct fetch response status:", directResponse.status);
-      if (!directResponse.ok) {
+             if (!directResponse.ok) {
         const errorText = await directResponse.text();
         console.error("API error response:", errorText);
         throw new Error(
@@ -236,13 +233,11 @@ export function AuthProvider({ children }) {
       }
 
       const directData = await directResponse.json();
-      console.log("Direct fetch successful, got user data:", directData);
-
+       
       // Continue with regular axios flow
       const response = { data: directData };
 
-      console.log("Dispatching OAUTH_LOGIN_SUCCESS action");
-      dispatch({
+             dispatch({
         type: "OAUTH_LOGIN_SUCCESS",
         payload: {
           user: response.data.user,

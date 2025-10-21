@@ -21,8 +21,7 @@ function OAuthCallback() {
   useEffect(() => {
     // Prevent duplicate processing
     if (processingRef.current) {
-      console.log("Already processing OAuth, skipping duplicate call");
-      return;
+             return;
     }
 
     // Safety check for too many attempts
@@ -39,24 +38,17 @@ function OAuthCallback() {
       // Set processing flag to prevent duplicate calls
       processingRef.current = true;
       setAttemptCount((prev) => prev + 1);
-      console.log(`OAuth processing attempt #${attemptCount + 1}`);
-
+       
       try {
-        console.log(
-          "Starting OAuth process with token:",
-          token ? `${token.substring(0, 10)}...` : "no token"
-        );
-
+         
         if (error) {
-          console.log("OAuth error parameter detected:", error);
-          toast.error("Google authentication failed. Please try again.");
+                     toast.error("Google authentication failed. Please try again.");
           navigate("/login", { replace: true });
           return;
         }
 
         if (!token) {
-          console.log("No token found in URL parameters");
-          toast.error("No authentication token received.");
+                     toast.error("No authentication token received.");
           navigate("/login", { replace: true });
           return;
         }
@@ -64,35 +56,26 @@ function OAuthCallback() {
         // Store token directly in localStorage as additional backup
         try {
           localStorage.setItem("token", token);
-          console.log("Token saved directly to localStorage in OAuthCallback");
-        } catch (e) {
+                   } catch (e) {
           console.warn("Failed to save token to localStorage:", e);
         }
 
-        console.log("Calling processOAuthLogin with token");
-        const result = await processOAuthLogin(token);
-        console.log("processOAuthLogin result:", result);
-
+                 const result = await processOAuthLogin(token);
+         
         if (result && result.success) {
-          console.log("Login successful, navigating to dashboard...");
-
+           
           // Successfully authenticated, quietly redirect to dashboard without toast
           navigate("/", { replace: true });
 
           // Add a backup direct redirect after a short delay
           setTimeout(() => {
             if (document.location.pathname.includes("/oauth/callback")) {
-              console.log("Forcing redirect via window.location");
-              window.location.href = "/";
+                             window.location.href = "/";
             }
           }, 1500);
         } else {
           // Only show error toast if there's an issue
-          console.log(
-            "Login failed with error:",
-            result?.error || "Unknown error"
-          );
-          toast.error(
+                     toast.error(
             result?.error || "Authentication failed. Please try again."
           );
           navigate("/login", { replace: true });
